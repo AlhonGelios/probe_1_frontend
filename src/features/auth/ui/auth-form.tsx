@@ -30,12 +30,16 @@ export function AuthForm() {
 				alert("Вход выполнен успешно!");
 				router.push("/dashboard"); // Перенаправляем на /dashboard
 			}
-		} catch (err: any) {
+		} catch (err: unknown) {
 			console.error("Ошибка авторизации/регистрации:", err);
-			setError(
-				err.message ||
-					"Произошла неизвестная ошибка. Попробуйте еще раз."
-			);
+			if (err instanceof Error) {
+				setError(
+					err.message ||
+						"Произошла неизвестная ошибка. Попробуйте еще раз."
+				);
+			} else {
+				setError("Произошла неизвестная ошибка. Попробуйте еще раз.");
+			}
 		} finally {
 			setLoading(false);
 		}
