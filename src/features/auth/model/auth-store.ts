@@ -1,0 +1,75 @@
+import { create } from "zustand";
+import { User } from "./types";
+import { checkSession } from "../api/auth-api";
+
+interface AuthState {
+	user: User | null;
+	isLoggedIn: boolean;
+	isLoading: boolean;
+	error: string | null;
+	isInitialized: boolean;
+
+	setUser: (user: User | null) => void;
+	login: (user: User) => void;
+	logout: () => void;
+	setLoading: (loading: boolean) => void;
+	setError: (error: string | null) => void;
+	checkAuth: () => Promise<void>;
+}
+
+export const useAuthStore = create<AuthState>()((set, get) => ({
+	user: null,
+	isLoggedIn: false,
+	isLoading: false,
+	error: null,
+	isInitialized: false,
+
+	setUser: (user) =>
+		set(() => ({
+			user: user,
+			isLoggedIn: !!user,
+		})),
+
+	login: (user) =>
+		set(() => ({
+			user: user,
+			isLoggedIn: true,
+			error: null,
+		})),
+
+	logout: () =>
+		set(() => ({
+			user: null,
+			isLoggedIn: false,
+			error: null,
+		})),
+
+	setLoading: (loading) => set(() => ({ isLoading: loading })),
+
+	setError: (error) => set(() => ({ error: error })),
+
+	checkAuth: async () => {
+		const { setLoading, setUser, setError } = get();
+		setLoading(true);
+		setError(null);
+		try {
+			const user = await checkSession();
+			setUser(user);
+		} catch (err: unknown) {
+			console.error("Failed to check auth:", err);
+			if (err instanceof Error) {
+				setError(
+					err.message || "Не удалось проверить статус авторизации."
+				);
+			} else {
+				setError(
+					"Произошла неизвестная ошибка при проверке авторизации."
+				);
+			}
+			setUser(null);
+		} finally {
+			setLoading(false);
+			set(() => ({ isInitialized: true }));
+		}
+	},
+}));

@@ -4,18 +4,29 @@ import React, { useState } from "react";
 import { Button } from "@/shared/ui/button";
 import { useRouter } from "next/navigation";
 import { loginUser, registerUser } from "../api/auth-api";
+import { useAuthStore } from "../model/auth-store";
+import { useShallow } from "zustand/shallow";
 
 export function AuthForm() {
 	const [isSignUp, setIsSignUp] = useState(false);
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
-	const [loading, setLoading] = useState(false);
-	const [error, setError] = useState<string | null>(null);
+
+	const { login, setLoading, setError, isLoading, error } = useAuthStore(
+		useShallow((state) => ({
+			login: state.login,
+			setLoading: state.setLoading,
+			setError: state.setError,
+			isLoading: state.isLoading,
+			error: state.error,
+		}))
+	);
+
 	const router = useRouter();
 
 	const handleSubmit = async (event: React.FormEvent) => {
 		event.preventDefault();
-		setLoading(true); // Устанавливаем состояние загрузки
+		setLoading(true);
 		setError(null);
 
 		try {
@@ -23,12 +34,13 @@ export function AuthForm() {
 				const registeredUser = await registerUser({ email, password });
 				console.log("Пользователь зарегистрирован:", registeredUser);
 				alert("Регистрация прошла успешно! Теперь вы можете войти.");
-				setIsSignUp(false); // Переключаем на форму входа после регистрации
+				setIsSignUp(false);
 			} else {
 				const loggedInUser = await loginUser({ email, password });
 				console.log("Пользователь авторизован:", loggedInUser);
 				alert("Вход выполнен успешно!");
-				router.push("/dashboard"); // Перенаправляем на /dashboard
+				login(loggedInUser);
+				router.push("/dashboard");
 			}
 		} catch (err: unknown) {
 			console.error("Ошибка авторизации/регистрации:", err);
@@ -65,7 +77,7 @@ export function AuthForm() {
 						value={email}
 						onChange={(e) => setEmail(e.target.value)}
 						required
-						disabled={loading}
+						disabled={isLoading}
 					/>
 				</div>
 				<div>
@@ -82,7 +94,7 @@ export function AuthForm() {
 						value={password}
 						onChange={(e) => setPassword(e.target.value)}
 						required
-						disabled={loading}
+						disabled={isLoading}
 					/>
 				</div>
 				{error && (
@@ -90,8 +102,8 @@ export function AuthForm() {
 						{error}
 					</p>
 				)}
-				<Button type="submit" className="w-full" disabled={loading}>
-					{loading
+				<Button type="submit" className="w-full" disabled={isLoading}>
+					{isLoading
 						? isSignUp
 							? "Регистрация..."
 							: "Вход..."
@@ -109,7 +121,7 @@ export function AuthForm() {
 						setError(null);
 					}}
 					className="ml-1 font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
-					disabled={loading}
+					disabled={isLoading}
 				>
 					{isSignUp ? "Войти" : "Зарегистрироваться"}
 				</button>

@@ -50,3 +50,30 @@ export async function loginUser(credentials: LoginCredentials): Promise<User> {
 		throw error;
 	}
 }
+
+export async function checkSession(): Promise<User | null> {
+	try {
+		const response = await fetch(`${BASE_URL}/api/auth/session-status`, {
+			method: "GET",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			credentials: "include", // Важно для отправки кук с запросом
+		});
+
+		if (response.ok) {
+			const userData: User = await response.json();
+			return userData;
+		} else if (response.status === 403) {
+			return null;
+		} else {
+			const errorData = await response.json();
+			throw new Error(
+				errorData.message || "Ошибка проверки сессии на сервере."
+			);
+		}
+	} catch (error) {
+		console.error("Ошибка при проверке сессии:", error);
+		return null;
+	}
+}

@@ -1,3 +1,5 @@
+"use client";
+
 import { AuthForm } from "@/features/auth/ui/auth-form";
 
 export default function WelcomePage() {
