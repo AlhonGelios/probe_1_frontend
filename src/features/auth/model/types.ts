@@ -3,16 +3,16 @@ export interface LoginCredentials {
 	password: string;
 }
 
-// export interface RegisterCredentials extends LoginCredentials {
-//   // Можно добавить другие поля, если они понадобятся для регистрации
-//   // например: username: string;
-// }
-
-export type RegisterCredentials = LoginCredentials;
+export interface RegisterCredentials extends LoginCredentials {
+	firstName: string;
+	lastName: string;
+}
 
 export interface User {
 	id: string;
 	email: string;
+	lastName: string;
+	firstName: string;
 	isVerified: boolean;
 	verificationToken: string;
 	tokenExpiresAt: Date;

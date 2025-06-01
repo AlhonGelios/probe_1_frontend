@@ -43,7 +43,8 @@ export async function loginUser(credentials: LoginCredentials): Promise<User> {
 			throw new Error(errorData.message || "Ошибка авторизации");
 		}
 
-		const userData: User = await response.json();
+		const responseData = await response.json();
+		const userData: User = responseData.user;
 		return userData;
 	} catch (error) {
 		console.error("Ошибка при авторизации:", error);
@@ -62,7 +63,8 @@ export async function checkSession(): Promise<User | null> {
 		});
 
 		if (response.ok) {
-			const userData: User = await response.json();
+			const responseData = await response.json();
+			const userData: User = responseData.user;
 			return userData;
 		} else if (response.status === 403) {
 			return null;
