@@ -16,8 +16,7 @@ export default function DashboardPage() {
 	const router = useRouter();
 
 	const handleLogout = async () => {
-		// В реальном приложении здесь стоит отправить запрос на бэкенд для завершения сессии
-		logout();
+		await logout();
 		router.push("/");
 	};
 

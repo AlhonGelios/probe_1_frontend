@@ -79,3 +79,26 @@ export async function checkSession(): Promise<User | null> {
 		return null;
 	}
 }
+
+export async function logoutUser(): Promise<void> {
+	try {
+		const response = await fetch(`${BASE_URL}/api/auth/logout`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			credentials: "include",
+		});
+
+		if (!response.ok) {
+			console.warn(
+				"Backend responded with non-OK status during logout, but proceeding with frontend logout.",
+				response.status
+			);
+		}
+		const data = await response.json();
+		console.log("Logout response from backend:", data);
+	} catch (error) {
+		console.error("Ошибка при запросе на выход:", error);
+	}
+}

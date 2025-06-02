@@ -6,6 +6,7 @@ export interface LoginCredentials {
 export interface RegisterCredentials extends LoginCredentials {
 	firstName: string;
 	lastName: string;
+	recaptchaToken: string;
 }
 
 export interface User {

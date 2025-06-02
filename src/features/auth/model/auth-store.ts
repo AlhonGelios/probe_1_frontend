@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { User } from "./types";
-import { checkSession } from "../api/auth-api";
+import { checkSession, logoutUser } from "../api/auth-api";
 
 interface AuthState {
 	user: User | null;
@@ -11,7 +11,7 @@ interface AuthState {
 
 	setUser: (user: User | null) => void;
 	login: (user: User) => void;
-	logout: () => void;
+	logout: () => Promise<void>;
 	setLoading: (loading: boolean) => void;
 	setError: (error: string | null) => void;
 	checkAuth: () => Promise<void>;
@@ -37,12 +37,32 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 			error: null,
 		})),
 
-	logout: () =>
-		set(() => ({
-			user: null,
-			isLoggedIn: false,
-			error: null,
-		})),
+	logout: async () => {
+		const { setLoading, setError } = get();
+		setLoading(true);
+		setError(null);
+		try {
+			await logoutUser();
+		} catch (err: unknown) {
+			console.error("Ошибка при выходе из системы:", err);
+			if (err instanceof Error) {
+				setError(err.message || "Произошла ошибка при выходе.");
+			} else {
+				setError("Произошла неизвестная ошибка при выходе.");
+			}
+			// Мы все равно продолжим очистку состояния на фронтенде
+			// даже если запрос на бэкенд завершился ошибкой,
+			// чтобы обеспечить корректный UX для пользователя.
+		} finally {
+			set(() => ({
+				user: null,
+				isLoggedIn: false,
+				isInitialized: false,
+				error: null,
+			}));
+			setLoading(false);
+		}
+	},
 
 	setLoading: (loading) => set(() => ({ isLoading: loading })),
 
