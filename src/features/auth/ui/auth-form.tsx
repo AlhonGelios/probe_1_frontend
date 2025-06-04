@@ -84,17 +84,26 @@ export function AuthForm() {
 				}
 
 				const registeredUser = await registerUser(registerValues);
-				console.log("Пользователь зарегистрирован:", registeredUser);
-				alert(
-					"Регистрация прошла успешно! Вам отправлено письмо для подтверждения email"
+				router.push(
+					`/verify-email?id=${registeredUser.id}&firstName=${registeredUser.firstName}&lastName=${registeredUser.lastName}&email=${registeredUser.email}`
 				);
-				setIsSignUp(false);
+				//setIsSignUp(false);
 			} else {
 				const loginValues = values as LoginFormValues;
 				const loggedInUser = await loginUser(loginValues);
-				console.log("Пользователь авторизован:", loggedInUser);
-				login(loggedInUser);
-				router.push("/dashboard");
+
+				if (!loggedInUser.isVerified) {
+					alert(
+						"Ваш аккаунт еще не подтвержден. Пожалуйста, проверьте свою почту."
+					);
+					router.push(
+						`/verify-email?id=${loggedInUser.id}&firstName=${loggedInUser.firstName}&lastName=${loggedInUser.lastName}&email=${loggedInUser.email}`
+					);
+				} else {
+					alert("Вход выполнен успешно!");
+					login(loggedInUser);
+					router.push("/dashboard");
+				}
 			}
 		} catch (err: unknown) {
 			console.error("Ошибка авторизации/регистрации:", err);

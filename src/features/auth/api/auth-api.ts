@@ -1,4 +1,9 @@
-import { LoginCredentials, RegisterCredentials, User } from "../model/types";
+import {
+	LoginCredentials,
+	RegisterCredentials,
+	User,
+	VerifyStatusResponse,
+} from "../model/types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -19,7 +24,11 @@ export async function registerUser(
 			throw new Error(errorData.message || "Ошибка регистрации");
 		}
 
-		const userData: User = await response.json();
+		const result = await response.json();
+		const userData = result.user;
+
+		console.log(result.message);
+
 		return userData;
 	} catch (error) {
 		console.error("Ошибка при регистрации:", error);
@@ -77,6 +86,39 @@ export async function checkSession(): Promise<User | null> {
 	} catch (error) {
 		console.error("Ошибка при проверке сессии:", error);
 		return null;
+	}
+}
+
+export async function checkVerificationStatus(
+	userId: string
+): Promise<VerifyStatusResponse> {
+	try {
+		const response = await fetch(
+			`${BASE_URL}/api/auth/verify-status?id=${userId}`,
+			{
+				method: "GET",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				credentials: "include",
+			}
+		);
+
+		if (!response.ok) {
+			const errorData = await response.json();
+			throw new Error(
+				errorData.message || "Ошибка проверки статуса верификации."
+			);
+		}
+
+		const data = await response.json();
+		return data as VerifyStatusResponse;
+	} catch (error) {
+		console.error(
+			`Ошибка при проверке статуса верификации для пользователя ${userId}:`,
+			error
+		);
+		throw error;
 	}
 }
 

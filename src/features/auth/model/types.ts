@@ -20,3 +20,9 @@ export interface User {
 	createdAt: Date;
 	updatedAt: Date;
 }
+
+export interface VerifyStatusResponse {
+	userId: string;
+	email: string;
+	isVerified: boolean;
+}
