@@ -258,7 +258,7 @@ export function AuthForm() {
 					onClick={() => {
 						setIsSignUp(!isSignUp);
 					}}
-					className="ml-1 font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+					className="ml-1 font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 cursor-pointer"
 					disabled={isLoading}
 				>
 					{isSignUp ? "Войти" : "Зарегистрироваться"}
