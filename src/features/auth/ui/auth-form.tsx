@@ -1,19 +1,33 @@
 "use client";
 
 import React, { useState } from "react";
-import { Button } from "@/shared/ui/button";
 import { useRouter } from "next/navigation";
-import { loginUser, registerUser } from "../api/auth-api";
-import { useAuthStore } from "../model/auth-store";
-import { useShallow } from "zustand/shallow";
 import ReCAPTCHA from "react-google-recaptcha";
+import { useAuthStore } from "@/features/auth/model/auth-store";
+import { useShallow } from "zustand/react/shallow";
+import { loginUser, registerUser } from "@/features/auth/api/auth-api";
+import { FieldErrors, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Button } from "@/shared/ui/button";
+import {
+	Form,
+	FormControl,
+	FormField,
+	FormItem,
+	FormLabel,
+	FormMessage,
+} from "@/shared/ui/form";
+import { Input } from "@/shared/ui/input";
+import {
+	loginSchema,
+	registerSchema,
+	LoginFormValues,
+	RegisterFormValues,
+} from "@/features/auth/model/auth-schemas";
+import { PasswordInput } from "@/shared/ui/password-input";
 
 export function AuthForm() {
 	const [isSignUp, setIsSignUp] = useState(false);
-	const [email, setEmail] = useState("");
-	const [password, setPassword] = useState("");
-	const [firstName, setFirstName] = useState("");
-	const [lastName, setLastName] = useState("");
 	const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
 
 	const { login, setLoading, setError, isLoading, error } = useAuthStore(
@@ -25,58 +39,67 @@ export function AuthForm() {
 			error: state.error,
 		}))
 	);
-
 	const router = useRouter();
+
+	const formSchema = isSignUp ? registerSchema : loginSchema;
+
+	const form = useForm<LoginFormValues | RegisterFormValues>({
+		resolver: zodResolver(formSchema),
+		defaultValues: {
+			email: "",
+			password: "",
+			firstName: "",
+			lastName: "",
+			recaptchaToken: "",
+		} as LoginFormValues & RegisterFormValues,
+		mode: "onChange",
+	});
+
+	React.useEffect(() => {
+		form.reset();
+		setRecaptchaToken(null);
+		setError(null);
+	}, [isSignUp, form, setError]);
 
 	const handleRecaptchaChange = (token: string | null) => {
 		setRecaptchaToken(token);
+		form.setValue("recaptchaToken", token || "", { shouldValidate: true });
+		if (token) {
+			form.clearErrors("recaptchaToken");
+		}
 		setError(null);
 	};
 
-	const handleSubmit = async (event: React.FormEvent) => {
-		event.preventDefault();
+	const onSubmit = async (values: LoginFormValues | RegisterFormValues) => {
 		setLoading(true);
 		setError(null);
 
 		try {
 			if (isSignUp) {
-				if (!recaptchaToken) {
+				const registerValues = values as RegisterFormValues;
+				if (!registerValues.recaptchaToken) {
 					setError("Пожалуйста, подтвердите, что вы не робот.");
 					setLoading(false);
 					return;
 				}
-				const registeredUser = await registerUser({
-					email,
-					password,
-					firstName,
-					lastName,
-					recaptchaToken,
-				});
+
+				const registeredUser = await registerUser(registerValues);
 				console.log("Пользователь зарегистрирован:", registeredUser);
-				alert("Регистрация прошла успешно! Теперь вы можете войти.");
-				setEmail("");
-				setPassword("");
-				setFirstName("");
-				setLastName("");
-				setRecaptchaToken(null);
+				alert(
+					"Регистрация прошла успешно! Вам отправлено письмо для подтверждения email"
+				);
 				setIsSignUp(false);
 			} else {
-				const loggedInUser = await loginUser({
-					email,
-					password,
-				});
+				const loginValues = values as LoginFormValues;
+				const loggedInUser = await loginUser(loginValues);
 				console.log("Пользователь авторизован:", loggedInUser);
-				alert("Вход выполнен успешно!");
 				login(loggedInUser);
 				router.push("/dashboard");
 			}
 		} catch (err: unknown) {
 			console.error("Ошибка авторизации/регистрации:", err);
 			if (err instanceof Error) {
-				setError(
-					err.message ||
-						"Произошла неизвестная ошибка. Попробуйте еще раз."
-				);
+				setError(err.message || "Ошибка авторизации/регистрации:");
 			} else {
 				setError("Произошла неизвестная ошибка. Попробуйте еще раз.");
 			}
@@ -85,133 +108,146 @@ export function AuthForm() {
 		}
 	};
 
+	const recaptchaErrors = form.formState
+		.errors as FieldErrors<RegisterFormValues>;
+
 	return (
 		<div className="w-full max-w-sm p-8 space-y-6 bg-white rounded-lg shadow-md dark:bg-gray-800">
 			<h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white">
 				{isSignUp ? "Регистрация" : "Вход"}
 			</h2>
-			<form onSubmit={handleSubmit} className="space-y-4">
-				{isSignUp && (
-					<>
-						<div>
-							<label
-								htmlFor="firstName"
-								className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-							>
-								Имя
-							</label>
-							<input
-								type="text"
-								id="firstName"
-								className="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-								value={firstName}
-								onChange={(e) => setFirstName(e.target.value)}
-								required
-								disabled={isLoading}
-							/>
-						</div>
-						<div>
-							<label
-								htmlFor="lastName"
-								className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-							>
-								Фамилия
-							</label>
-							<input
-								type="text"
-								id="lastName"
-								className="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-								value={lastName}
-								onChange={(e) => setLastName(e.target.value)}
-								required
-								disabled={isLoading}
-							/>
-						</div>
-					</>
-				)}
-				<div>
-					<label
-						htmlFor="email"
-						className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-					>
-						Email
-					</label>
-					<input
-						type="email"
-						id="email"
-						className="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-						value={email}
-						onChange={(e) => setEmail(e.target.value)}
-						required
-						disabled={isLoading}
-					/>
-				</div>
-				<div>
-					<label
-						htmlFor="password"
-						className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-					>
-						Пароль
-					</label>
-					<input
-						type="password"
-						id="password"
-						className="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-						value={password}
-						onChange={(e) => setPassword(e.target.value)}
-						required
-						disabled={isLoading}
-					/>
-				</div>
-
-				{isSignUp && (
-					<div className="flex justify-center mt-4">
-						<ReCAPTCHA
-							sitekey={
-								process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ""
-							}
-							onChange={handleRecaptchaChange}
-							onExpired={() => setRecaptchaToken(null)}
-							onErrored={() =>
-								setError(
-									"Ошибка CAPTCHA. Пожалуйста, попробуйте еще раз."
-								)
-							}
-						/>
-					</div>
-				)}
-
-				{error && (
-					<p className="text-sm text-red-600 dark:text-red-400 text-center">
-						{error}
-					</p>
-				)}
-				<Button
-					type="submit"
-					className="w-full"
-					disabled={isLoading || (isSignUp && !recaptchaToken)}
+			<Form {...form}>
+				<form
+					onSubmit={form.handleSubmit(onSubmit)}
+					className="space-y-4"
 				>
-					{isLoading
-						? isSignUp
-							? "Регистрация..."
-							: "Вход..."
-						: isSignUp
-						? "Зарегистрироваться"
-						: "Войти"}
-				</Button>
-			</form>
+					{isSignUp && (
+						<>
+							<FormField
+								control={form.control}
+								name="firstName"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Имя</FormLabel>
+										<FormControl>
+											<Input
+												placeholder="Ваше имя"
+												{...field}
+												disabled={isLoading}
+											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name="lastName"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Фамилия</FormLabel>
+										<FormControl>
+											<Input
+												placeholder="Ваша фамилия"
+												{...field}
+												disabled={isLoading}
+											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+						</>
+					)}
+					<FormField
+						control={form.control}
+						name="email"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Email</FormLabel>
+								<FormControl>
+									<Input
+										type="email"
+										placeholder="email@example.com"
+										{...field}
+										disabled={isLoading}
+									/>
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+					<FormField
+						control={form.control}
+						name="password"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Пароль</FormLabel>
+								<FormControl>
+									<PasswordInput
+										placeholder="********"
+										{...field}
+										disabled={isLoading}
+									/>
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+
+					{isSignUp && (
+						<div className="flex justify-center mt-4 flex-col items-center">
+							<ReCAPTCHA
+								sitekey={
+									process.env
+										.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ""
+								}
+								onChange={handleRecaptchaChange}
+								onExpired={() => {
+									setRecaptchaToken(null);
+									form.setValue("recaptchaToken", "");
+								}}
+								onErrored={() =>
+									setError(
+										"Ошибка CAPTCHA. Пожалуйста, попробуйте еще раз."
+									)
+								}
+							/>
+							{recaptchaErrors.recaptchaToken && (
+								<p className="text-sm text-red-600 dark:text-red-400 mt-2">
+									{recaptchaErrors.recaptchaToken.message}
+								</p>
+							)}
+						</div>
+					)}
+
+					{error && ( // Ошибки от бэкенда или общие ошибки
+						<p className="text-sm text-red-600 dark:text-red-400 text-center">
+							{error}
+						</p>
+					)}
+					<Button
+						type="submit"
+						className="w-full"
+						disabled={isLoading || (isSignUp && !recaptchaToken)}
+					>
+						{isLoading
+							? isSignUp
+								? "Регистрация..."
+								: "Вход..."
+							: isSignUp
+							? "Зарегистрироваться"
+							: "Войти"}
+					</Button>
+				</form>
+			</Form>
+
 			<p className="text-sm text-center text-gray-600 dark:text-gray-400">
 				{isSignUp ? "Уже есть аккаунт?" : "Нет аккаунта?"}
 				<button
 					type="button"
 					onClick={() => {
 						setIsSignUp(!isSignUp);
-						setError(null);
-						setEmail("");
-						setPassword("");
-						setFirstName("");
-						setLastName("");
-						setRecaptchaToken(null);
 					}}
 					className="ml-1 font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
 					disabled={isLoading}
