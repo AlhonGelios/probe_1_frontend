@@ -48,6 +48,37 @@ export const registerSchema = z.object({
 		.min(1, { message: "Подтвердите, что вы не робот." }),
 });
 
+export const forgotPasswordSchema = z.object({
+	email: z.string().email({ message: "Неверный формат email." }),
+});
+
+export const resetPasswordSchema = z
+	.object({
+		password: z
+			.string()
+			.min(8, "Пароль должен быть не менее 8 символов.")
+			.regex(
+				/[a-z]/,
+				"Пароль должен содержать хотя бы одну строчную букву."
+			)
+			.regex(
+				/[A-Z]/,
+				"Пароль должен содержать хотя бы одну заглавную букву."
+			)
+			.regex(/\d/, "Пароль должен содержать хотя бы одну цифру.")
+			.regex(
+				/[^a-zA-Z0-9]/,
+				"Пароль должен содержать хотя бы один специальный символ."
+			),
+		confirmPassword: z.string(),
+	})
+	.refine((data) => data.password === data.confirmPassword, {
+		message: "Пароли не совпадают.",
+		path: ["confirmPassword"],
+	});
+
 // Выводим типы из схем для удобства
 export type LoginFormValues = z.infer<typeof loginSchema>;
 export type RegisterFormValues = z.infer<typeof registerSchema>;
+export type ForgotPasswordValues = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordValues = z.infer<typeof resetPasswordSchema>;

@@ -199,6 +199,18 @@ export function AuthForm() {
 										disabled={isLoading}
 									/>
 								</FormControl>
+								<div className="text-right text-sm mt-1">
+									<button
+										type="button"
+										onClick={() =>
+											router.push("/forgot-password")
+										}
+										className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 cursor-pointer link-hover-underline"
+										disabled={isLoading}
+									>
+										Забыли пароль?
+									</button>
+								</div>
 								<FormMessage />
 							</FormItem>
 						)}

@@ -1,6 +1,7 @@
 import {
 	LoginCredentials,
 	RegisterCredentials,
+	ResetPasswordCredentials,
 	User,
 	VerifyStatusResponse,
 } from "../model/types";
@@ -142,5 +143,57 @@ export async function logoutUser(): Promise<void> {
 		console.log("Logout response from backend:", data);
 	} catch (error) {
 		console.error("Ошибка при запросе на выход:", error);
+	}
+}
+
+export async function requestPasswordReset(
+	email: string
+): Promise<{ message: string }> {
+	try {
+		const response = await fetch(`${BASE_URL}/api/auth/forgot-password`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({ email }),
+		});
+
+		if (!response.ok) {
+			const errorData = await response.json();
+			throw new Error(
+				errorData.message || "Ошибка при запросе сброса пароля."
+			);
+		}
+
+		const data = await response.json();
+		return data; // Ожидаем { message: "Ссылка для сброса пароля отправлена на ваш email." }
+	} catch (error) {
+		console.error("Ошибка при запросе сброса пароля:", error);
+		throw error;
+	}
+}
+
+export async function resetPassword(
+	credentials: ResetPasswordCredentials
+): Promise<{ message: string }> {
+	try {
+		const response = await fetch(`${BASE_URL}/api/auth/reset-password`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify(credentials),
+		});
+
+		if (!response.ok) {
+			const errorData = await response.json();
+			throw new Error(errorData.message || "Ошибка при сбросе пароля.");
+		}
+
+		const data = await response.json();
+		return data; // Ожидаем { message: "Пароль успешно сброшен." }
+	} catch (error) {
+		console.error("Ошибка при сбросе пароля:", error);
+		throw error;
 	}
 }

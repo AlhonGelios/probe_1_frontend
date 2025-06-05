@@ -26,3 +26,8 @@ export interface VerifyStatusResponse {
 	email: string;
 	isVerified: boolean;
 }
+
+export interface ResetPasswordCredentials {
+	token: string;
+	newPassword: string;
+}
