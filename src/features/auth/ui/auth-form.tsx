@@ -48,6 +48,7 @@ export function AuthForm() {
 		defaultValues: {
 			email: "",
 			password: "",
+			confirmPassword: "",
 			firstName: "",
 			lastName: "",
 			recaptchaToken: "",
@@ -77,11 +78,11 @@ export function AuthForm() {
 		try {
 			if (isSignUp) {
 				const registerValues = values as RegisterFormValues;
-				if (!registerValues.recaptchaToken) {
-					setError("Пожалуйста, подтвердите, что вы не робот.");
-					setLoading(false);
-					return;
-				}
+				// if (!registerValues.recaptchaToken) {
+				// 	setError("Пожалуйста, подтвердите, что вы не робот.");
+				// 	setLoading(false);
+				// 	return;
+				// }
 
 				const registeredUser = await registerUser(registerValues);
 				router.push(
@@ -199,22 +200,44 @@ export function AuthForm() {
 										disabled={isLoading}
 									/>
 								</FormControl>
-								<div className="text-right text-sm mt-1">
-									<button
-										type="button"
-										onClick={() =>
-											router.push("/forgot-password")
-										}
-										className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 cursor-pointer link-hover-underline"
-										disabled={isLoading}
-									>
-										Забыли пароль?
-									</button>
-								</div>
+								{!isSignUp && (
+									<div className="text-right text-sm mt-1">
+										<button
+											type="button"
+											onClick={() =>
+												router.push("/forgot-password")
+											}
+											className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 cursor-pointer link-hover-underline"
+											disabled={isLoading}
+										>
+											Забыли пароль?
+										</button>
+									</div>
+								)}
 								<FormMessage />
 							</FormItem>
 						)}
 					/>
+
+					{isSignUp && ( // Показываем только для формы регистрации
+						<FormField
+							control={form.control}
+							name="confirmPassword" // Имя поля, как в схеме
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Подтвердите пароль</FormLabel>
+									<FormControl>
+										<PasswordInput
+											placeholder="********"
+											{...field}
+											disabled={isLoading}
+										/>
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+					)}
 
 					{isSignUp && (
 						<div className="flex justify-center mt-4 flex-col items-center">
