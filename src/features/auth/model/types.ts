@@ -31,3 +31,8 @@ export interface ResetPasswordCredentials {
 	token: string;
 	newPassword: string;
 }
+
+export interface RequestPasswordResetCredentials {
+	email: string;
+	recaptchaToken: string;
+}

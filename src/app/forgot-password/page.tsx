@@ -2,10 +2,9 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { FieldErrors, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { requestPasswordReset } from "@/features/auth/api/auth-api";
-
 import { Button } from "@/shared/ui/button";
 import {
 	Form,
@@ -21,12 +20,14 @@ import {
 	forgotPasswordSchema,
 	ForgotPasswordValues,
 } from "@/features/auth/model/auth-schemas";
+import ReCAPTCHA from "react-google-recaptcha";
 
 export default function ForgotPasswordPage() {
 	const router = useRouter();
 	const [message, setMessage] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
+	const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
 
 	const form = useForm<ForgotPasswordValues>({
 		resolver: zodResolver(forgotPasswordSchema),
@@ -36,15 +37,37 @@ export default function ForgotPasswordPage() {
 		mode: "onBlur", // Валидация при потере фокуса
 	});
 
+	const handleRecaptchaChange = (token: string | null) => {
+		setRecaptchaToken(token);
+		form.setValue("recaptchaToken", token || "", { shouldValidate: true }); // Устанавливаем значение в форму
+		if (token) {
+			form.clearErrors("recaptchaToken"); // Очищаем ошибку, если токен получен
+		}
+		setError(null); // Очищаем общую ошибку при взаимодействии с капчей
+	};
+
 	const onSubmit = async (values: ForgotPasswordValues) => {
 		setIsLoading(true);
 		setMessage(null);
 		setError(null);
 
+		if (!values.recaptchaToken) {
+			setError("Пожалуйста, подтвердите, что вы не робот.");
+			setIsLoading(false);
+			return;
+		}
+
 		try {
-			const response = await requestPasswordReset(values.email);
+			const response = await requestPasswordReset({
+				email: values.email,
+				recaptchaToken: values.recaptchaToken,
+			});
 			setMessage(response.message);
-			form.reset();
+			form.reset({
+				email: "",
+				recaptchaToken: "",
+			});
+			setRecaptchaToken(null);
 		} catch (err: unknown) {
 			console.error("Ошибка при запросе сброса пароля:", err);
 			if (err instanceof Error) {
@@ -53,10 +76,15 @@ export default function ForgotPasswordPage() {
 						"Произошла неизвестная ошибка при запросе сброса пароля."
 				);
 			}
+			setRecaptchaToken(null);
+			form.setValue("recaptchaToken", "");
 		} finally {
 			setIsLoading(false);
 		}
 	};
+
+	const recaptchaErrors = form.formState
+		.errors as FieldErrors<ForgotPasswordValues>;
 
 	return (
 		<div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
@@ -88,6 +116,30 @@ export default function ForgotPasswordPage() {
 							)}
 						/>
 
+						<div className="flex justify-center mt-4 flex-col items-center">
+							<ReCAPTCHA
+								sitekey={
+									process.env
+										.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ""
+								}
+								onChange={handleRecaptchaChange}
+								onExpired={() => {
+									setRecaptchaToken(null);
+									form.setValue("recaptchaToken", ""); // Сбрасываем значение в форме при истечении
+								}}
+								onErrored={() =>
+									setError(
+										"Ошибка CAPTCHA. Пожалуйста, попробуйте еще раз."
+									)
+								}
+							/>
+							{recaptchaErrors.recaptchaToken && ( // Отображаем ошибку валидации из Zod
+								<p className="text-sm text-red-600 dark:text-red-400 mt-2">
+									{recaptchaErrors.recaptchaToken.message}
+								</p>
+							)}
+						</div>
+
 						{message && (
 							<p className="text-sm text-green-600 dark:text-green-400 text-center">
 								{message}
@@ -102,7 +154,7 @@ export default function ForgotPasswordPage() {
 						<Button
 							type="submit"
 							className="w-full"
-							disabled={isLoading}
+							disabled={isLoading || !recaptchaToken}
 						>
 							{isLoading ? (
 								<>

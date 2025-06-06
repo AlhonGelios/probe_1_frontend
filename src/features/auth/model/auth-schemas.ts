@@ -14,12 +14,9 @@ export const loginSchema = z.object({
 // Схема для регистрации
 export const registerSchema = z
 	.object({
-		firstName: z
-			.string()
-			.min(1, { message: "Имя обязательно." })
-			.max(50, {
-				message: "Имя должено содержать максимум 50 символов.",
-			}),
+		firstName: z.string().min(1, { message: "Имя обязательно." }).max(50, {
+			message: "Имя должено содержать максимум 50 символов.",
+		}),
 		lastName: z
 			.string()
 			.min(1, { message: "Фамилия обязательна." })
@@ -64,6 +61,9 @@ export const registerSchema = z
 
 export const forgotPasswordSchema = z.object({
 	email: z.string().email({ message: "Неверный формат email." }),
+	recaptchaToken: z
+		.string()
+		.min(1, "Пожалуйста, подтвердите, что вы не робот."),
 });
 
 export const resetPasswordSchema = z

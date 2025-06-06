@@ -1,6 +1,7 @@
 import {
 	LoginCredentials,
 	RegisterCredentials,
+	RequestPasswordResetCredentials,
 	ResetPasswordCredentials,
 	User,
 	VerifyStatusResponse,
@@ -147,7 +148,7 @@ export async function logoutUser(): Promise<void> {
 }
 
 export async function requestPasswordReset(
-	email: string
+	credentials: RequestPasswordResetCredentials
 ): Promise<{ message: string }> {
 	try {
 		const response = await fetch(`${BASE_URL}/api/auth/forgot-password`, {
@@ -155,7 +156,7 @@ export async function requestPasswordReset(
 			headers: {
 				"Content-Type": "application/json",
 			},
-			body: JSON.stringify({ email }),
+			body: JSON.stringify(credentials),
 		});
 
 		if (!response.ok) {

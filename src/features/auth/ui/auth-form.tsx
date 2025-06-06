@@ -78,13 +78,14 @@ export function AuthForm() {
 		try {
 			if (isSignUp) {
 				const registerValues = values as RegisterFormValues;
-				// if (!registerValues.recaptchaToken) {
-				// 	setError("Пожалуйста, подтвердите, что вы не робот.");
-				// 	setLoading(false);
-				// 	return;
-				// }
+				const {
+					confirmPassword: _,
+					...registerValuesWithoutConfirmPassword
+				} = registerValues;
 
-				const registeredUser = await registerUser(registerValues);
+				const registeredUser = await registerUser(
+					registerValuesWithoutConfirmPassword
+				);
 				router.push(
 					`/verify-email?id=${registeredUser.id}&firstName=${registeredUser.firstName}&lastName=${registeredUser.lastName}&email=${registeredUser.email}`
 				);
