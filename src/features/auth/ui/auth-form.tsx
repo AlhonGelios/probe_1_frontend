@@ -26,13 +26,14 @@ import {
 } from "@/features/auth/model/auth-schemas";
 import { PasswordInput } from "@/shared/ui/password-input";
 import { LoginResponse } from "../model/types";
+import { RecaptchaComponent } from "@/shared/ui/recaptcha";
 
 export function AuthForm() {
 	const [isSignUp, setIsSignUp] = useState(false);
 	const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
 	const [backendRequiresCaptcha, setBackendRequiresCaptcha] = useState(false);
 
-	const recaptchaRef = useRef<ReCAPTCHA>(null);
+	const recaptchaRef = useRef<ReCAPTCHA>(null) as React.RefObject<ReCAPTCHA>;
 
 	const { login, setLoading, setError, isLoading, error } = useAuthStore(
 		useShallow((state) => ({
@@ -285,39 +286,17 @@ export function AuthForm() {
 						/>
 					)}
 
-					{/* ReCAPTCHA отображается, если это регистрация или бэкенд требует её для входа */}
 					{shouldShowCaptcha && (
 						<div className="flex justify-center mt-4 flex-col items-center">
-							<ReCAPTCHA
-								ref={recaptchaRef}
+							<RecaptchaComponent
+								recaptchaRef={recaptchaRef}
 								sitekey={
 									process.env
 										.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ""
 								}
-								onChange={handleRecaptchaChange}
-								onExpired={() => {
-									setRecaptchaToken(null);
-									form.setValue("recaptchaToken", "");
-									if (recaptchaRef.current) {
-										recaptchaRef.current.reset();
-										console.log(
-											"ReCAPTCHA widget reset on token expiration."
-										);
-									}
-								}}
-								onErrored={() => {
-									setError(
-										"Ошибка CAPTCHA. Пожалуйста, попробуйте еще раз."
-									);
-									if (recaptchaRef.current) {
-										recaptchaRef.current.reset();
-										console.log(
-											"ReCAPTCHA widget reset on error."
-										);
-									}
-								}}
+								onRecaptchaChange={handleRecaptchaChange}
+								onRecaptchaError={(msg) => setError(msg)}
 							/>
-							{/* Отображаем ошибку в зависимости от того, какая форма активна */}
 							{isSignUp && recaptchaErrors.recaptchaToken && (
 								<p className="text-sm text-red-600 dark:text-red-400 mt-2">
 									{recaptchaErrors.recaptchaToken.message}
@@ -345,13 +324,14 @@ export function AuthForm() {
 					<Button
 						type="submit"
 						className="w-full"
-						// Кнопка отключена, если загрузка, или (если нужна CAPTCHA И нет токена)
 						disabled={isButtonDisabled}
 					>
 						{isLoading
 							? isSignUp
 								? "Регистрация..."
 								: "Вход..."
+							: isSignUp
+							? "Зарегистрироваться"
 							: "Войти"}
 					</Button>
 				</form>
