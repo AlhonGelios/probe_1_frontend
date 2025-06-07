@@ -1,6 +1,13 @@
 export interface LoginCredentials {
 	email: string;
 	password: string;
+	recaptchaToken?: string;
+}
+
+export interface LoginResponse {
+	user?: User;
+	requiresCaptcha?: boolean;
+	message?: string;
 }
 
 export interface RegisterCredentials extends LoginCredentials {

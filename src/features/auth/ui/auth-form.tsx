@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import ReCAPTCHA from "react-google-recaptcha";
 import { useAuthStore } from "@/features/auth/model/auth-store";
@@ -25,10 +25,14 @@ import {
 	RegisterFormValues,
 } from "@/features/auth/model/auth-schemas";
 import { PasswordInput } from "@/shared/ui/password-input";
+import { LoginResponse } from "../model/types";
 
 export function AuthForm() {
 	const [isSignUp, setIsSignUp] = useState(false);
 	const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+	const [backendRequiresCaptcha, setBackendRequiresCaptcha] = useState(false);
+
+	const recaptchaRef = useRef<ReCAPTCHA>(null);
 
 	const { login, setLoading, setError, isLoading, error } = useAuthStore(
 		useShallow((state) => ({
@@ -56,10 +60,14 @@ export function AuthForm() {
 		mode: "onChange",
 	});
 
-	React.useEffect(() => {
+	useEffect(() => {
 		form.reset();
 		setRecaptchaToken(null);
 		setError(null);
+		setBackendRequiresCaptcha(false);
+		if (recaptchaRef.current) {
+			recaptchaRef.current.reset();
+		}
 	}, [isSignUp, form, setError]);
 
 	const handleRecaptchaChange = (token: string | null) => {
@@ -89,30 +97,61 @@ export function AuthForm() {
 				router.push(
 					`/verify-email?id=${registeredUser.id}&firstName=${registeredUser.firstName}&lastName=${registeredUser.lastName}&email=${registeredUser.email}`
 				);
-				//setIsSignUp(false);
 			} else {
 				const loginValues = values as LoginFormValues;
-				const loggedInUser = await loginUser(loginValues);
+				if (backendRequiresCaptcha && !recaptchaToken) {
+					setError("Пожалуйста, подтвердите, что вы не робот.");
+					setLoading(false);
+					return;
+				}
 
-				if (!loggedInUser.isVerified) {
-					alert(
-						"Ваш аккаунт еще не подтвержден. Пожалуйста, проверьте свою почту."
-					);
-					router.push(
-						`/verify-email?id=${loggedInUser.id}&firstName=${loggedInUser.firstName}&lastName=${loggedInUser.lastName}&email=${loggedInUser.email}`
-					);
-				} else {
-					alert("Вход выполнен успешно!");
-					login(loggedInUser);
+				const response: LoginResponse = await loginUser(loginValues);
+
+				if (response.user) {
+					alert(response.message || "Вход выполнен успешно!");
+					login(response.user);
+					setBackendRequiresCaptcha(false);
+					setRecaptchaToken(null);
 					router.push("/dashboard");
+					if (recaptchaRef.current) {
+						recaptchaRef.current.reset();
+						console.log(
+							"ReCAPTCHA widget reset on successful login."
+						);
+					}
+				} else {
+					setError(
+						response.message || "Ошибка входа. Попробуйте еще раз."
+					);
+					if (response.requiresCaptcha) {
+						console.log(
+							"Backend explicitly requires CAPTCHA. Setting backendRequiresCaptcha to true."
+						);
+						setBackendRequiresCaptcha(true);
+						setRecaptchaToken(null);
+						form.setValue("recaptchaToken", "");
+						if (recaptchaRef.current) {
+							recaptchaRef.current.reset();
+							console.log(
+								"ReCAPTCHA widget reset due to backend requiring CAPTCHA."
+							);
+						}
+					}
 				}
 			}
 		} catch (err: unknown) {
-			console.error("Ошибка авторизации/регистрации:", err);
+			console.error("Неожиданная ошибка:", err);
 			if (err instanceof Error) {
-				setError(err.message || "Ошибка авторизации/регистрации:");
-			} else {
-				setError("Произошла неизвестная ошибка. Попробуйте еще раз.");
+				setError(
+					err.message ||
+						"Произошла неизвестная ошибка сети. Попробуйте еще раз."
+				);
+			}
+			setRecaptchaToken(null);
+			form.setValue("recaptchaToken", "");
+			if (recaptchaRef.current) {
+				recaptchaRef.current.reset();
+				console.log("ReCAPTCHA widget reset due to submit error.");
 			}
 		} finally {
 			setLoading(false);
@@ -121,6 +160,12 @@ export function AuthForm() {
 
 	const recaptchaErrors = form.formState
 		.errors as FieldErrors<RegisterFormValues>;
+	const loginRecaptchaErrors = form.formState
+		.errors as FieldErrors<LoginFormValues>;
+
+	const shouldShowCaptcha = isSignUp || backendRequiresCaptcha;
+	const isButtonDisabled =
+		isLoading || (shouldShowCaptcha && !recaptchaToken);
 
 	return (
 		<div className="w-full max-w-sm p-8 space-y-6 bg-white rounded-lg shadow-md dark:bg-gray-800">
@@ -220,10 +265,10 @@ export function AuthForm() {
 						)}
 					/>
 
-					{isSignUp && ( // Показываем только для формы регистрации
+					{isSignUp && (
 						<FormField
 							control={form.control}
-							name="confirmPassword" // Имя поля, как в схеме
+							name="confirmPassword"
 							render={({ field }) => (
 								<FormItem>
 									<FormLabel>Подтвердите пароль</FormLabel>
@@ -240,9 +285,11 @@ export function AuthForm() {
 						/>
 					)}
 
-					{isSignUp && (
+					{/* ReCAPTCHA отображается, если это регистрация или бэкенд требует её для входа */}
+					{shouldShowCaptcha && (
 						<div className="flex justify-center mt-4 flex-col items-center">
 							<ReCAPTCHA
+								ref={recaptchaRef}
 								sitekey={
 									process.env
 										.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ""
@@ -251,37 +298,60 @@ export function AuthForm() {
 								onExpired={() => {
 									setRecaptchaToken(null);
 									form.setValue("recaptchaToken", "");
+									if (recaptchaRef.current) {
+										recaptchaRef.current.reset();
+										console.log(
+											"ReCAPTCHA widget reset on token expiration."
+										);
+									}
 								}}
-								onErrored={() =>
+								onErrored={() => {
 									setError(
 										"Ошибка CAPTCHA. Пожалуйста, попробуйте еще раз."
-									)
-								}
+									);
+									if (recaptchaRef.current) {
+										recaptchaRef.current.reset();
+										console.log(
+											"ReCAPTCHA widget reset on error."
+										);
+									}
+								}}
 							/>
-							{recaptchaErrors.recaptchaToken && (
+							{/* Отображаем ошибку в зависимости от того, какая форма активна */}
+							{isSignUp && recaptchaErrors.recaptchaToken && (
 								<p className="text-sm text-red-600 dark:text-red-400 mt-2">
 									{recaptchaErrors.recaptchaToken.message}
 								</p>
 							)}
+							{!isSignUp &&
+								backendRequiresCaptcha &&
+								loginRecaptchaErrors.recaptchaToken && (
+									<p className="text-sm text-red-600 dark:text-red-400 mt-2">
+										{
+											loginRecaptchaErrors.recaptchaToken
+												.message
+										}
+									</p>
+								)}
 						</div>
 					)}
 
-					{error && ( // Ошибки от бэкенда или общие ошибки
+					{error && (
 						<p className="text-sm text-red-600 dark:text-red-400 text-center">
 							{error}
 						</p>
 					)}
+
 					<Button
 						type="submit"
 						className="w-full"
-						disabled={isLoading || (isSignUp && !recaptchaToken)}
+						// Кнопка отключена, если загрузка, или (если нужна CAPTCHA И нет токена)
+						disabled={isButtonDisabled}
 					>
 						{isLoading
 							? isSignUp
 								? "Регистрация..."
 								: "Вход..."
-							: isSignUp
-							? "Зарегистрироваться"
 							: "Войти"}
 					</Button>
 				</form>
@@ -294,7 +364,7 @@ export function AuthForm() {
 					onClick={() => {
 						setIsSignUp(!isSignUp);
 					}}
-					className="ml-1 font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 cursor-pointer"
+					className="ml-1 font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 cursor-pointer link-hover-underline"
 					disabled={isLoading}
 				>
 					{isSignUp ? "Войти" : "Зарегистрироваться"}

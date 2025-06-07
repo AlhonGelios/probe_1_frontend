@@ -1,5 +1,6 @@
 import {
 	LoginCredentials,
+	LoginResponse,
 	RegisterCredentials,
 	RequestPasswordResetCredentials,
 	ResetPasswordCredentials,
@@ -38,7 +39,9 @@ export async function registerUser(
 	}
 }
 
-export async function loginUser(credentials: LoginCredentials): Promise<User> {
+export async function loginUser(
+	credentials: LoginCredentials
+): Promise<LoginResponse> {
 	try {
 		const response = await fetch(`${BASE_URL}/api/auth/login`, {
 			method: "POST",
@@ -49,17 +52,29 @@ export async function loginUser(credentials: LoginCredentials): Promise<User> {
 			credentials: "include", // Это важно для отправки и получения кук
 		});
 
+		const data = await response.json();
+
 		if (!response.ok) {
-			const errorData = await response.json();
-			throw new Error(errorData.message || "Ошибка авторизации");
+			return {
+				user: undefined,
+				requiresCaptcha: data.requiresCaptcha || false,
+				message: data.message || "Неизвестная ошибка входа.",
+			};
 		}
 
-		const responseData = await response.json();
-		const userData: User = responseData.user;
-		return userData;
-	} catch (error) {
-		console.error("Ошибка при авторизации:", error);
-		throw error;
+		return {
+			user: data.user as User,
+			message: data.message || "Вход выполнен успешно!",
+		};
+	} catch (error: unknown) {
+		console.error("Ошибка при входе:", error);
+		if (error instanceof Error) {
+			return {
+				user: undefined,
+				message: error.message || "Ошибка сети. Попробуйте еще раз.",
+			};
+		}
+		return { user: undefined, message: "Ошибка сети. Попробуйте еще раз." };
 	}
 }
 

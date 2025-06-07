@@ -9,6 +9,7 @@ export const loginSchema = z.object({
 	password: z
 		.string()
 		.max(50, { message: "Пароль должен содержать максимум 50 символов." }),
+	recaptchaToken: z.string().optional(),
 });
 
 // Схема для регистрации
