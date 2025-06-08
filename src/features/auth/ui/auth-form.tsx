@@ -109,7 +109,6 @@ export function AuthForm() {
 				const response: LoginResponse = await loginUser(loginValues);
 
 				if (response.user) {
-					alert(response.message || "Вход выполнен успешно!");
 					login(response.user);
 					setBackendRequiresCaptcha(false);
 					setRecaptchaToken(null);
