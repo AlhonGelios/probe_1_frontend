@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:3000"; // Убедитесь, что это ваш реальный URL
+const BACKEND_URL =
+	process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3000"; // Убедитесь, что это ваш реальный URL
 
 export default async function middleware(request: NextRequest) {
 	const pathname = request.nextUrl.pathname;
