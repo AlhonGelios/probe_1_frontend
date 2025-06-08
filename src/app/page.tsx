@@ -4,9 +4,9 @@ import { AuthForm } from "@/features/auth/ui/auth-form";
 
 export default function WelcomePage() {
 	return (
-		<div className="flex flex-col items-center justify-center min-h-screen py-2 bg-gray-50 dark:bg-gray-900">
+		<div className="flex flex-col items-center justify-center min-h-screen py-2 ">
 			<main className="flex flex-col items-center justify-center flex-1 w-full px-4 text-center">
-				<h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">
+				<h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-20">
 					Добро пожаловать в систему приемной кампании!
 				</h1>
 				<AuthForm />

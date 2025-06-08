@@ -65,7 +65,7 @@ export function VerifyEmailForm() {
 		};
 	}, [userId, email]);
 	return (
-		<div className="p-8 space-y-6 bg-white rounded-lg shadow-md dark:bg-gray-800 text-center">
+		<div className="p-8 space-y-6 bg-white rounded-lg shadow-xl/30 dark:bg-gray-800 text-center">
 			{isVerified ? (
 				<>
 					<svg

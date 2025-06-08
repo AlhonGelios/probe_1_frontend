@@ -169,7 +169,7 @@ export function AuthForm() {
 		isLoading || (shouldShowCaptcha && !recaptchaToken);
 
 	return (
-		<div className="w-full max-w-sm p-8 space-y-6 bg-white rounded-lg shadow-md dark:bg-gray-800">
+		<div className="w-full max-w-sm p-8 space-y-6 bg-white rounded-lg shadow-xl/30 dark:bg-gray-800">
 			<h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white">
 				{isSignUp ? "Регистрация" : "Вход"}
 			</h2>
