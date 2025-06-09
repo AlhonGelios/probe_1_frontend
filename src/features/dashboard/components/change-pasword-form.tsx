@@ -11,7 +11,6 @@ import {
 	FormLabel,
 	FormMessage,
 } from "@/shared/ui/form";
-import { Input } from "@/shared/ui/input";
 import { Button } from "@/shared/ui/button";
 import { toast } from "sonner";
 import {
@@ -19,6 +18,7 @@ import {
 	passwordChangeSchema,
 } from "@/features/dashboard/model/shemas";
 import { changePassword } from "../api/edit-profile-api";
+import { PasswordInput } from "@/shared/ui/password-input";
 
 export default function ChangePasswordForm() {
 	const form = useForm<PasswordChangeFormValues>({
@@ -72,7 +72,7 @@ export default function ChangePasswordForm() {
 							<FormItem>
 								<FormLabel>Текущий пароль</FormLabel>
 								<FormControl>
-									<Input type="password" {...field} />
+									<PasswordInput {...field} />
 								</FormControl>
 								<FormMessage />
 							</FormItem>
@@ -85,7 +85,7 @@ export default function ChangePasswordForm() {
 							<FormItem>
 								<FormLabel>Новый пароль</FormLabel>
 								<FormControl>
-									<Input type="password" {...field} />
+									<PasswordInput {...field} />
 								</FormControl>
 								<FormMessage />
 							</FormItem>
@@ -98,7 +98,7 @@ export default function ChangePasswordForm() {
 							<FormItem>
 								<FormLabel>Подтвердите новый пароль</FormLabel>
 								<FormControl>
-									<Input type="password" {...field} />
+									<PasswordInput {...field} />
 								</FormControl>
 								<FormMessage />
 							</FormItem>
