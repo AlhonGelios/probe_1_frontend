@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -19,6 +19,7 @@ import {
 } from "@/features/dashboard/model/shemas";
 import { changePassword } from "../api/edit-profile-api";
 import { PasswordInput } from "@/shared/ui/password-input";
+import { Loader2 } from "lucide-react";
 
 export default function ChangePasswordForm() {
 	const form = useForm<PasswordChangeFormValues>({
@@ -31,15 +32,16 @@ export default function ChangePasswordForm() {
 		mode: "onBlur",
 	});
 
+	const [isLoading, setIsLoading] = useState(false);
+
 	const onSubmit = async (values: PasswordChangeFormValues) => {
+		setIsLoading(true);
 		try {
 			await changePassword({
 				currentPassword: values.currentPassword,
 				newPassword: values.newPassword,
 			});
-			toast.success("Пароль успешно изменен.", {
-				description: "Вы можете войти с новым паролем.",
-			});
+			toast.success("Пароль успешно изменен.");
 
 			form.reset({
 				currentPassword: "",
@@ -54,11 +56,13 @@ export default function ChangePasswordForm() {
 						"Произошла неизвестная ошибка при смене пароля.",
 				});
 			}
+		} finally {
+			setIsLoading(false);
 		}
 	};
 
 	return (
-		<div className="bg-card text-card-foreground p-6 rounded-lg shadow-md">
+		<div className="max-w-md mx-auto bg-card text-card-foreground p-6 rounded-lg shadow-xl/30">
 			<h2 className="text-2xl font-semibold mb-4">Смена пароля</h2>
 			<Form {...form}>
 				<form
@@ -104,7 +108,14 @@ export default function ChangePasswordForm() {
 							</FormItem>
 						)}
 					/>
-					<Button type="submit" className="w-full">
+					<Button
+						type="submit"
+						className="w-full"
+						disabled={isLoading}
+					>
+						{isLoading && (
+							<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+						)}
 						Сменить пароль
 					</Button>
 				</form>
