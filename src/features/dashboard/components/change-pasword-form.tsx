@@ -18,6 +18,7 @@ import {
 	PasswordChangeFormValues,
 	passwordChangeSchema,
 } from "@/features/dashboard/model/shemas";
+import { changePassword } from "../api/edit-profile-api";
 
 export default function ChangePasswordForm() {
 	const form = useForm<PasswordChangeFormValues>({
@@ -27,6 +28,7 @@ export default function ChangePasswordForm() {
 			newPassword: "",
 			confirmNewPassword: "",
 		},
+		mode: "onBlur",
 	});
 
 	const onSubmit = async (values: PasswordChangeFormValues) => {
@@ -35,8 +37,6 @@ export default function ChangePasswordForm() {
 				currentPassword: values.currentPassword,
 				newPassword: values.newPassword,
 			});
-
-			// <-- Изменено: вызовы toast
 			toast.success("Пароль успешно изменен.", {
 				description: "Вы можете войти с новым паролем.",
 			});
@@ -46,76 +46,69 @@ export default function ChangePasswordForm() {
 				newPassword: "",
 				confirmNewPassword: "",
 			});
-		} catch (error: any) {
-			// <-- Изменено: вызовы toast
-			toast.error("Ошибка смены пароля.", {
-				description:
-					error.message ||
-					"Произошла неизвестная ошибка при смене пароля.",
-			});
+		} catch (error: unknown) {
+			if (error instanceof Error) {
+				toast.error("Ошибка смены пароля.", {
+					description:
+						error.message ||
+						"Произошла неизвестная ошибка при смене пароля.",
+				});
+			}
 		}
 	};
 
 	return (
-		<div className="container max-w-lg mx-auto py-8">
-			<h1 className="text-3xl font-bold mb-6 text-center text-foreground">
-				Редактирование профиля
-			</h1>
-
-			<div className="bg-card text-card-foreground p-6 rounded-lg shadow-md">
-				<h2 className="text-2xl font-semibold mb-4">Смена пароля</h2>
-				<Form {...form}>
-					<form
-						onSubmit={form.handleSubmit(onSubmit)}
-						className="space-y-4"
-					>
-						<FormField
-							control={form.control}
-							name="currentPassword"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Текущий пароль</FormLabel>
-									<FormControl>
-										<Input type="password" {...field} />
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-						<FormField
-							control={form.control}
-							name="newPassword"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Новый пароль</FormLabel>
-									<FormControl>
-										<Input type="password" {...field} />
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-						<FormField
-							control={form.control}
-							name="confirmNewPassword"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>
-										Подтвердите новый пароль
-									</FormLabel>
-									<FormControl>
-										<Input type="password" {...field} />
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-						<Button type="submit" className="w-full">
-							Сменить пароль
-						</Button>
-					</form>
-				</Form>
-			</div>
+		<div className="bg-card text-card-foreground p-6 rounded-lg shadow-md">
+			<h2 className="text-2xl font-semibold mb-4">Смена пароля</h2>
+			<Form {...form}>
+				<form
+					onSubmit={form.handleSubmit(onSubmit)}
+					className="space-y-4"
+				>
+					<FormField
+						control={form.control}
+						name="currentPassword"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Текущий пароль</FormLabel>
+								<FormControl>
+									<Input type="password" {...field} />
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+					<FormField
+						control={form.control}
+						name="newPassword"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Новый пароль</FormLabel>
+								<FormControl>
+									<Input type="password" {...field} />
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+					<FormField
+						control={form.control}
+						name="confirmNewPassword"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Подтвердите новый пароль</FormLabel>
+								<FormControl>
+									<Input type="password" {...field} />
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+					<Button type="submit" className="w-full">
+						Сменить пароль
+					</Button>
+				</form>
+			</Form>
 		</div>
 	);
 }

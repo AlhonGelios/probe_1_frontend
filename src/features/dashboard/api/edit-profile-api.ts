@@ -5,7 +5,7 @@ export async function changePassword(data: {
 	currentPassword: string;
 	newPassword: string;
 }): Promise<void> {
-	const response = await fetch(`${BACKEND_URL}/users/change-password`, {
+	const response = await fetch(`${BACKEND_URL}/api/users/change-password`, {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
