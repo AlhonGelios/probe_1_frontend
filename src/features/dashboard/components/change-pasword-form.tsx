@@ -21,14 +21,14 @@ import { changePassword } from "../api/edit-profile-api";
 import { PasswordInput } from "@/shared/ui/password-input";
 import { Loader2 } from "lucide-react";
 
-export default function ChangePasswordForm() {
+export function ChangePasswordForm() {
 	const form = useForm<PasswordChangeFormValues>({
 		resolver: zodResolver(passwordChangeSchema),
 		defaultValues: {
 			currentPassword: "",
 			newPassword: "",
 			confirmNewPassword: "",
-		},
+		} as PasswordChangeFormValues,
 		mode: "onBlur",
 	});
 

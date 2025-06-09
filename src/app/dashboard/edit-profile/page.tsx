@@ -1,6 +1,6 @@
 "use client";
 
-import ChangePasswordForm from "@/features/dashboard/components/change-pasword-form";
+import { ChangePasswordForm } from "@/features/dashboard";
 
 export default function EditProfilePage() {
 	return (
