@@ -29,7 +29,7 @@ export function ChangePasswordForm() {
 			newPassword: "",
 			confirmNewPassword: "",
 		} as PasswordChangeFormValues,
-		mode: "onBlur",
+		mode: "onSubmit",
 	});
 
 	const [isLoading, setIsLoading] = useState(false);
@@ -62,7 +62,7 @@ export function ChangePasswordForm() {
 	};
 
 	return (
-		<div className="max-w-md mx-auto bg-card text-card-foreground p-6 rounded-lg shadow-xl/30">
+		<div className="max-w-md bg-card text-card-foreground p-6 rounded-lg shadow-xl/30">
 			<h2 className="text-2xl font-semibold mb-4">Смена пароля</h2>
 			<Form {...form}>
 				<form

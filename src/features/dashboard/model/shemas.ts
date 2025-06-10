@@ -29,4 +29,16 @@ export const passwordChangeSchema = z
 		path: ["confirmNewPassword"],
 	});
 
+export const profileEditSchema = z.object({
+	firstName: z
+		.string()
+		.min(1, { message: "Имя обязательно." })
+		.max(50, { message: "Имя не должно превышать 50 символов." }),
+	lastName: z
+		.string()
+		.min(1, { message: "Фамилия обязательна." })
+		.max(50, { message: "Фамилия не должна превышать 50 символов." }),
+});
+
+export type ProfileEditFormValues = z.infer<typeof profileEditSchema>;
 export type PasswordChangeFormValues = z.infer<typeof passwordChangeSchema>;
