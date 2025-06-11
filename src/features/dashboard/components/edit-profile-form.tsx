@@ -72,7 +72,7 @@ export function EditProfileForm() {
 	};
 
 	return (
-		<div className="max-w-md bg-card text-card-foreground p-6 rounded-lg shadow-xl/30">
+		<div className="max-w-md bg-card text-card-foreground p-6 rounded-lg shadow-xl/30 flex flex-col">
 			<h2 className="text-2xl font-semibold mb-4">
 				Редактировать профиль
 			</h2>
@@ -81,32 +81,34 @@ export function EditProfileForm() {
 					onSubmit={form.handleSubmit(onSubmit)}
 					className="space-y-4"
 				>
-					<FormField
-						control={form.control}
-						name="firstName"
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Имя</FormLabel>
-								<FormControl>
-									<Input type="text" {...field} />
-								</FormControl>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-					<FormField
-						control={form.control}
-						name="lastName"
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Фамилия</FormLabel>
-								<FormControl>
-									<Input type="text" {...field} />
-								</FormControl>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
+					<div className="space-y-4">
+						<FormField
+							control={form.control}
+							name="firstName"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Имя</FormLabel>
+									<FormControl>
+										<Input type="text" {...field} />
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+						<FormField
+							control={form.control}
+							name="lastName"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Фамилия</FormLabel>
+									<FormControl>
+										<Input type="text" {...field} />
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+					</div>
 					<Button
 						type="submit"
 						className="w-full"

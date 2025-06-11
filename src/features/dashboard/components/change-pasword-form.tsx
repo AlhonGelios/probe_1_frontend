@@ -62,7 +62,7 @@ export function ChangePasswordForm() {
 	};
 
 	return (
-		<div className="max-w-md bg-card text-card-foreground p-6 rounded-lg shadow-xl/30">
+		<div className="max-w-md bg-card text-card-foreground p-6 rounded-lg shadow-xl/30 min-h-[50%]">
 			<h2 className="text-2xl font-semibold mb-4">Смена пароля</h2>
 			<Form {...form}>
 				<form

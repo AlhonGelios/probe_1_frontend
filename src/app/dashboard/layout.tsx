@@ -13,7 +13,7 @@ export default function DashboardLayout({
 		<AuthGuard>
 			<div className="flex flex-col min-h-screen">
 				<DashboardHeader />
-				<main className="flex-grow p-6">{children}</main>
+				<main className="flex-grow p-6 h-full">{children}</main>
 			</div>
 		</AuthGuard>
 	);
