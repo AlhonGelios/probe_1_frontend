@@ -10,6 +10,7 @@ interface AuthState {
 	isInitialized: boolean;
 
 	setUser: (user: User | null) => void;
+	updateUser: (user: Partial<User>) => void;
 	login: (user: User) => void;
 	logout: () => Promise<void>;
 	setLoading: (loading: boolean) => void;
@@ -29,6 +30,12 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 			user: user,
 			isLoggedIn: !!user,
 		})),
+
+	updateUser: (userData) => {
+		set((state) => ({
+			user: state.user ? { ...state.user, ...userData } : null,
+		}));
+	},
 
 	login: (user) =>
 		set(() => ({
@@ -50,9 +57,6 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 			} else {
 				setError("Произошла неизвестная ошибка при выходе.");
 			}
-			// Мы все равно продолжим очистку состояния на фронтенде
-			// даже если запрос на бэкенд завершился ошибкой,
-			// чтобы обеспечить корректный UX для пользователя.
 		} finally {
 			set(() => ({
 				user: null,

@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import {
 	LoginCredentials,
 	LoginResponse,
@@ -157,6 +158,7 @@ export async function logoutUser(): Promise<void> {
 		}
 		const data = await response.json();
 		console.log("Logout response from backend:", data);
+		redirect("/welcome");
 	} catch (error) {
 		console.error("Ошибка при запросе на выход:", error);
 	}
