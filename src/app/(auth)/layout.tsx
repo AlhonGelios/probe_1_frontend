@@ -6,7 +6,7 @@ export default function AuthLayout({
 	children: React.ReactNode;
 }) {
 	return (
-		<div className="flex items-center justify-center w-full bg-[url('/images/welcome-bg.jpg')] bg-cover bg-center min-h-screen">
+		<div className="flex items-center justify-center w-full min-h-screen">
 			{children}
 		</div>
 	);

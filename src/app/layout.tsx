@@ -29,7 +29,7 @@ export default function RootLayout({
 	return (
 		<html lang="en">
 			<body
-				className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen`}
+				className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-[url('/images/welcome-bg.jpg')] bg-cover bg-center`}
 			>
 				{children}
 				<Toaster
