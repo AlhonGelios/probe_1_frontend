@@ -13,8 +13,8 @@ export default function EditProfilePage() {
 				Редактирование профиля
 			</h1>
 
-			<div className="flex flex-col md:flex-row md:items-stretch justify-between ">
-				<div className="flex flex-col md:flex-row md:items-stretch justify-start gap-8">
+			<div className="w-full flex flex-col lg:flex-row lg:items-stretch justify-between gap-8">
+				<div className="flex flex-col lg:flex-row lg:items-stretch justify-start gap-8">
 					<EditProfileForm />
 					<ChangePasswordForm />
 				</div>

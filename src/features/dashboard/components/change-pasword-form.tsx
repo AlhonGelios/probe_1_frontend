@@ -62,52 +62,56 @@ export function ChangePasswordForm() {
 	};
 
 	return (
-		<div className="max-w-md bg-card text-card-foreground p-6 rounded-lg shadow-xl/30 min-h-[50%]">
+		<div className="min-w-82 bg-card text-card-foreground p-6 rounded-lg shadow-xl/30 flex flex-col justify-between gap-2">
 			<h2 className="text-2xl font-semibold mb-4">Смена пароля</h2>
 			<Form {...form}>
 				<form
 					onSubmit={form.handleSubmit(onSubmit)}
-					className="space-y-4"
+					className="space-y-4 flex flex-col justify-between h-full"
 				>
-					<FormField
-						control={form.control}
-						name="currentPassword"
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Текущий пароль</FormLabel>
-								<FormControl>
-									<PasswordInput {...field} />
-								</FormControl>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-					<FormField
-						control={form.control}
-						name="newPassword"
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Новый пароль</FormLabel>
-								<FormControl>
-									<PasswordInput {...field} />
-								</FormControl>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-					<FormField
-						control={form.control}
-						name="confirmNewPassword"
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Подтвердите новый пароль</FormLabel>
-								<FormControl>
-									<PasswordInput {...field} />
-								</FormControl>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
+					<div className="space-y-4">
+						<FormField
+							control={form.control}
+							name="currentPassword"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Текущий пароль</FormLabel>
+									<FormControl>
+										<PasswordInput {...field} />
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+						<FormField
+							control={form.control}
+							name="newPassword"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Новый пароль</FormLabel>
+									<FormControl>
+										<PasswordInput {...field} />
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+						<FormField
+							control={form.control}
+							name="confirmNewPassword"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>
+										Подтвердите новый пароль
+									</FormLabel>
+									<FormControl>
+										<PasswordInput {...field} />
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+					</div>
 					<Button
 						type="submit"
 						className="w-full"

@@ -46,7 +46,7 @@ export function LogoutAllDeviceCard() {
 	};
 
 	return (
-		<Card className="max-w-md bg-card text-card-foreground p-6 rounded-lg shadow-md h-full flex flex-col justify-between">
+		<Card className="bg-card text-card-foreground p-6 rounded-lg shadow-md h-full flex flex-col justify-between">
 			<CardHeader className="p-0 pb-4">
 				<CardTitle className="text-2xl font-semibold">
 					Управление сессиями

@@ -72,14 +72,14 @@ export function EditProfileForm() {
 	};
 
 	return (
-		<div className="max-w-md bg-card text-card-foreground p-6 rounded-lg shadow-xl/30 flex flex-col">
+		<div className="min-w-82 bg-card text-card-foreground p-6 rounded-lg shadow-xl/30 flex flex-col justify-between gap-2">
 			<h2 className="text-2xl font-semibold mb-4">
 				Редактировать профиль
 			</h2>
 			<Form {...form}>
 				<form
 					onSubmit={form.handleSubmit(onSubmit)}
-					className="space-y-4"
+					className="space-y-4 flex flex-col justify-between h-full"
 				>
 					<div className="space-y-4">
 						<FormField
