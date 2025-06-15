@@ -79,20 +79,20 @@ export async function loginUser(
 	}
 }
 
-export async function checkSession(): Promise<User | null> {
+export async function checkSession(): Promise<{
+	isAuthenticated: boolean;
+} | null> {
 	try {
 		const response = await fetch(`${BASE_URL}/api/auth/session-status`, {
 			method: "GET",
 			headers: {
 				"Content-Type": "application/json",
 			},
-			credentials: "include", // Важно для отправки кук с запросом
+			credentials: "include",
 		});
 
 		if (response.ok) {
-			const responseData = await response.json();
-			const userData: User = responseData.user;
-			return userData;
+			return await response.json();
 		} else if (response.status === 403) {
 			return null;
 		} else {

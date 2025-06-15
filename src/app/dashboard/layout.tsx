@@ -1,14 +1,30 @@
 "use client";
 
+import { useAuthStore } from "@/features/auth/model/auth-store";
 import { DashboardHeader } from "@/features/dashboard";
 import { AuthGuard } from "@/widgets/auth-guard/ui";
-import React from "react";
+import React, { useEffect } from "react";
 
 export default function DashboardLayout({
 	children,
 }: {
 	children: React.ReactNode;
 }) {
+	const syncUser = useAuthStore((state) => state.syncUser);
+
+	useEffect(() => {
+		const handleFocus = () => {
+			syncUser();
+		};
+
+		window.addEventListener("focus", handleFocus);
+		syncUser();
+
+		return () => {
+			window.removeEventListener("focus", handleFocus);
+		};
+	}, [syncUser]);
+
 	return (
 		<AuthGuard>
 			<div className="flex flex-col min-h-screen">

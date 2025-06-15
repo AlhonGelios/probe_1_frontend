@@ -1,3 +1,4 @@
+import { User } from "@/features/auth/model/types";
 import { EditProfileResponse } from "../model/types";
 
 const BACKEND_URL =
@@ -62,4 +63,24 @@ export async function logoutAllDevices(): Promise<EditProfileResponse> {
 	}
 
 	return response.json();
+}
+
+export async function fetchCurrentUserProfile(): Promise<User> {
+	const response = await fetch(`${BACKEND_URL}/api/users/me`, {
+		method: "GET",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		credentials: "include",
+	});
+
+	if (!response.ok) {
+		const errorData = await response.json();
+		throw new Error(
+			errorData.message || "Не удалось получить данные профиля."
+		);
+	}
+
+	const data = await response.json();
+	return data.user;
 }

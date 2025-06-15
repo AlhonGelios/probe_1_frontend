@@ -22,8 +22,8 @@ export interface User {
 	lastName: string;
 	firstName: string;
 	isVerified: boolean;
-	verificationToken: string;
-	tokenExpiresAt: Date;
+	role: { name: string };
+	roleExpiration: Date | null;
 	createdAt: Date;
 	updatedAt: Date;
 }
