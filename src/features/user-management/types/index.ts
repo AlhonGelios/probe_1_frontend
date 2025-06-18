@@ -1,15 +1,11 @@
-// Типы для формы редактирования
-export interface UserEditFormValues {
-	userId: string;
-	firstName: string;
-	lastName: string;
-	role: string; // Название роли
-	roleExpiration: Date | null;
+export interface UserFilterState {
+	role: string;
+	search: string;
 }
 
-// Типы для фильтрации
-export interface UserFilterState {
-	role: string; // 'all' или конкретное имя роли
-	firstName: string;
-	lastName: string;
+export interface Role {
+	id: string;
+	name: string;
+	displayName: string;
+	description: string | null;
 }

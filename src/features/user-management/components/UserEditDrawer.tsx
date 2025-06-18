@@ -1,11 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
-import { ru } from "date-fns/locale"; // Для локализации даты, если нужно
+import { ru } from "date-fns/locale";
 
 import {
 	Sheet,
@@ -37,42 +36,33 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { cn } from "@/shared/lib/utils";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-
-// import { UserEditFormValues } from "../types";
 import { changeUser } from "../api/user-api";
 import { User } from "@/features/auth/model/types";
+import { UserEditFormValues, userEditSchema } from "../model/schemas";
+import { useRoleStore } from "../stores/role-store";
+import { z } from "zod";
+import { DatePickerInput } from "@/shared/ui/date-picker-input";
 
 interface UserEditDrawerProps {
 	user: User | null;
 	isOpen: boolean;
 	onClose: () => void;
-	onUserUpdated: () => void; // Колбэк для обновления списка пользователей
-	availableRoles: string[]; // Список всех доступных ролей
+	onUserUpdated: () => void;
 }
-
-const userEditSchema = z.object({
-	userId: z.string().min(1, "ID пользователя обязателен"),
-	firstName: z
-		.string()
-		.min(1, "Имя не может быть пустым")
-		.max(50, "Имя слишком длинное"),
-	lastName: z
-		.string()
-		.min(1, "Фамилия не может быть пустой")
-		.max(50, "Фамилия слишком длинная"),
-	role: z.string().min(1, "Роль обязательна"),
-	roleExpiration: z.date().nullable().optional(), // Дата может быть null
-});
-
-type UserEditFormValues = z.infer<typeof userEditSchema>;
 
 export function UserEditDrawer({
 	user,
 	isOpen,
 	onClose,
 	onUserUpdated,
-	availableRoles,
 }: UserEditDrawerProps) {
+	const {
+		roles,
+		isLoading: rolesLoading,
+		error: rolesError,
+		getRoleDisplayName,
+		getRoleNameByDisplayName,
+	} = useRoleStore();
 	const form = useForm<UserEditFormValues>({
 		resolver: zodResolver(userEditSchema),
 		defaultValues: {
@@ -93,7 +83,7 @@ export function UserEditDrawer({
 				userId: user.id,
 				firstName: user.firstName,
 				lastName: user.lastName,
-				role: user.role.name,
+				role: getRoleDisplayName(user.role.name),
 				roleExpiration:
 					user.roleExpiration instanceof Date
 						? user.roleExpiration
@@ -102,28 +92,35 @@ export function UserEditDrawer({
 						: null,
 			});
 		} else {
-			form.reset(); // Очищаем форму, если пользователя нет
+			form.reset();
 		}
-	}, [user, form]);
+	}, [user, form, getRoleDisplayName]);
 
 	const onSubmit = async (values: UserEditFormValues) => {
 		setIsLoading(true);
 		try {
-			// Преобразование roleExpiration для API, если оно есть
-			// const payload = {
-			// 	...values,
-			// 	roleExpiration: values.roleExpiration, // Date объект будет преобразован в ISOString в api/user-api.ts
-			// };
+			const roleNameForApi = getRoleNameByDisplayName(values.role);
+			if (!roleNameForApi) {
+				throw new Error("Выбранная роль не найдена.");
+			}
 
-			const response = await changeUser({
-				...values,
-				roleExpiration: values.roleExpiration ?? null,
-			});
+			const payload: UserEditFormValues = {
+				userId: values.userId,
+				firstName: values.firstName,
+				lastName: values.lastName,
+				role: roleNameForApi,
+				roleExpiration:
+					values.roleExpiration instanceof Date
+						? values.roleExpiration
+						: null,
+			};
+
+			const response = await changeUser(payload);
 			toast.success(
 				response.message || "Данные пользователя успешно обновлены."
 			);
-			onUserUpdated(); // Вызываем колбэк для обновления списка
-			onClose(); // Закрываем drawer
+			onUserUpdated();
+			onClose();
 		} catch (error: unknown) {
 			if (error instanceof Error)
 				toast.error("Ошибка при обновлении пользователя.", {
@@ -135,10 +132,14 @@ export function UserEditDrawer({
 		}
 	};
 
+	const availableDisplayNames = roles.map((role) => role.displayName).sort();
+
 	return (
 		<Sheet open={isOpen} onOpenChange={onClose}>
-			<SheetContent className="w-full sm:max-w-md">
-				{" "}
+			<SheetContent
+				className="w-full sm:max-w-md mt-16 md:mt-20 lg:mt-24 mb-4 mr-4 rounded-xl shadow-2xl transition-transform duration-500 ease-out"
+				side="right"
+			>
 				<SheetHeader>
 					<SheetTitle>
 						{user
@@ -189,7 +190,8 @@ export function UserEditDrawer({
 										<FormLabel>Роль</FormLabel>
 										<Select
 											onValueChange={field.onChange}
-											defaultValue={field.value}
+											value={field.value}
+											disabled={rolesLoading}
 										>
 											<FormControl>
 												<SelectTrigger>
@@ -197,84 +199,62 @@ export function UserEditDrawer({
 												</SelectTrigger>
 											</FormControl>
 											<SelectContent>
-												{availableRoles.map((role) => (
+												{rolesLoading ? (
 													<SelectItem
-														key={role}
-														value={role}
+														value="loading"
+														disabled
 													>
-														{role}
+														Загрузка ролей...
 													</SelectItem>
-												))}
+												) : rolesError ? (
+													<SelectItem
+														value="error"
+														disabled
+													>
+														Ошибка загрузки ролей
+													</SelectItem>
+												) : (
+													availableDisplayNames.map(
+														(displayName) => (
+															<SelectItem
+																key={
+																	displayName
+																}
+																value={
+																	displayName
+																}
+															>
+																{displayName}
+															</SelectItem>
+														)
+													)
+												)}
 											</SelectContent>
 										</Select>
 										<FormMessage />
 									</FormItem>
 								)}
 							/>
+							{/* <--- ИСПОЛЬЗУЕМ НОВЫЙ КОМПОНЕНТ DatePickerInput ЗДЕСЬ */}
 							<FormField
 								control={form.control}
 								name="roleExpiration"
 								render={({ field }) => (
-									<FormItem className="flex flex-col">
-										<FormLabel>
-											Дата истечения роли (опционально)
-										</FormLabel>
-										<Popover>
-											<PopoverTrigger asChild>
-												<FormControl>
-													<Button
-														variant={"outline"}
-														className={cn(
-															"w-full pl-3 text-left font-normal",
-															!field.value &&
-																"text-muted-foreground"
-														)}
-													>
-														{field.value ? (
-															format(
-																field.value,
-																"PPP",
-																{ locale: ru }
-															) // 'PPP' -> 25 мая 2023 г.
-														) : (
-															<span>
-																Выберите дату
-															</span>
-														)}
-														<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-													</Button>
-												</FormControl>
-											</PopoverTrigger>
-											<PopoverContent
-												className="w-auto p-0"
-												align="start"
-											>
-												<Calendar
-													mode="single"
-													selected={
-														field.value || undefined
-													}
-													onSelect={field.onChange}
-													initialFocus
-												/>
-											</PopoverContent>
-										</Popover>
-										<FormDescription>
-											Установите дату, после которой роль
-											пользователя будет неактивна.
-											Оставьте пустым для бессрочной роли.
-										</FormDescription>
-										<FormMessage />
-									</FormItem>
+									<DatePickerInput
+										field={field}
+										label="Дата истечения роли (опционально)"
+										placeholder="Выберите дату"
+										description="Установите дату, после которой роль пользователя будет неактивна. Оставьте пустым для бессрочной роли."
+										fromYear={new Date().getFullYear()} // Можете настроить диапазон лет
+										toYear={new Date().getFullYear() + 10}
+									/>
 								)}
 							/>
 							<div className="mt-auto pt-6">
-								{" "}
-								{/* Кнопка прижата к низу */}
 								<Button
 									type="submit"
 									className="w-full"
-									disabled={isLoading}
+									disabled={isLoading || rolesLoading}
 								>
 									{isLoading && (
 										<Loader2 className="mr-2 h-4 w-4 animate-spin" />

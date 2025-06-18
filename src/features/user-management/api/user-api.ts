@@ -1,4 +1,5 @@
-import { UserEditFormValues } from "../types";
+import { UserEditFormValues } from "../model/schemas";
+import { Role } from "../types";
 import { User } from "@/features/auth/model/types";
 
 const BACKEND_URL =
@@ -67,4 +68,22 @@ export const changeUser = async (
 	//   updatedAt: new Date(data.user.updatedAt),
 	// };
 	return data.user;
+};
+
+export const getAllRoles = async (): Promise<Role[]> => {
+	const response = await fetch(`${BACKEND_URL}/api/roles/all`, {
+		headers: {
+			"Content-Type": "application/json",
+		},
+		cache: "no-store",
+		credentials: "include",
+	});
+
+	if (!response.ok) {
+		const errorData = await response.json();
+		throw new Error(errorData.message || "Failed to fetch roles.");
+	}
+
+	const data = await response.json();
+	return data;
 };

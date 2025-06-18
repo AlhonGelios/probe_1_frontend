@@ -1,59 +1,63 @@
-// app/(dashboard)/users/page.tsx
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { format } from "date-fns"; // Import format for date utility
+import { ru } from "date-fns/locale"; // Import locale if needed for date formatting
 
 import { UserFilterState } from "@/features/user-management/types";
 import { getAllUsers } from "@/features/user-management/api/user-api";
 import { UserFilters } from "@/features/user-management/components/UserFilters";
 import { UserListTable } from "@/features/user-management/components/UserListTable";
 import { UserEditDrawer } from "@/features/user-management/components/UserEditDrawer";
-import { User } from "@/features/auth/model/types";
+import { useRoleStore } from "@/features/user-management/stores/role-store";
 import { Button } from "@/shared/ui/button";
+import { User } from "@/features/auth/model/types";
 
 export default function UserManagementPage() {
 	const [users, setUsers] = useState<User[]>([]);
-	const [isLoading, setIsLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
+	const [isLoadingUsers, setIsLoadingUsers] = useState(true);
+	const [usersError, setUsersError] = useState<string | null>(null);
+
+	const {
+		isLoading: isLoadingRoles,
+		error: rolesError,
+		fetchRoles,
+		getRoleNameByDisplayName,
+		getRoleDisplayName,
+	} = useRoleStore();
 
 	const [filter, setFilter] = useState<UserFilterState>({
 		role: "all",
-		firstName: "",
-		lastName: "",
+		search: "",
 	});
 
 	const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
 	const [editingUser, setEditingUser] = useState<User | null>(null);
 
-	// Пример списка доступных ролей (в реальном приложении это может приходить с бэкенда)
-	const allAvailableRoles = useMemo(() => {
-		const roles = new Set(users.map((u) => u.role.name));
-		return Array.from(roles).sort(); // Сортируем для отображения
-	}, [users]);
-
 	const fetchUsers = useCallback(async () => {
-		setIsLoading(true);
-		setError(null);
+		setIsLoadingUsers(true);
+		setUsersError(null);
 		try {
 			const fetchedUsers = await getAllUsers();
 			setUsers(fetchedUsers);
 		} catch (err: unknown) {
 			if (err instanceof Error) {
-				setError(err.message || "Failed to load users.");
+				setUsersError(err.message || "Failed to load users.");
 				toast.error("Ошибка загрузки пользователей", {
 					description: err.message,
 				});
 			}
 		} finally {
-			setIsLoading(false);
+			setIsLoadingUsers(false);
 		}
 	}, []);
 
 	useEffect(() => {
+		fetchRoles();
 		fetchUsers();
-	}, [fetchUsers]);
+	}, [fetchRoles, fetchUsers]);
 
 	const handleFilterChange = useCallback(
 		(newFilter: Partial<UserFilterState>) => {
@@ -73,36 +77,50 @@ export default function UserManagementPage() {
 	}, []);
 
 	const handleUserUpdated = useCallback(() => {
-		fetchUsers(); // Перезагружаем список пользователей после успешного обновления
+		fetchUsers();
 	}, [fetchUsers]);
 
 	// Применяем фильтры и сортировку к списку пользователей
 	const filteredAndSortedUsers = useMemo(() => {
 		let filteredUsers = users;
 
+		// 1. Фильтрация по роли (без изменений)
 		if (filter.role !== "all") {
-			filteredUsers = filteredUsers.filter(
-				(user) => user.role.name === filter.role
-			);
+			const internalRoleName = getRoleNameByDisplayName(filter.role);
+			if (internalRoleName) {
+				filteredUsers = filteredUsers.filter(
+					(user) => user.role.name === internalRoleName
+				);
+			} else {
+				filteredUsers = [];
+			}
 		}
 
-		if (filter.firstName) {
-			filteredUsers = filteredUsers.filter((user) =>
-				user.firstName
-					.toLowerCase()
-					.includes(filter.firstName.toLowerCase())
-			);
+		// 2. Глобальный поиск по всем полям
+		const searchTerm = filter.search.toLowerCase().trim();
+		if (searchTerm) {
+			filteredUsers = filteredUsers.filter((user) => {
+				// Объединяем все текстовые поля в одну строку для поиска
+				const userText = [
+					user.firstName,
+					user.lastName,
+					user.email,
+					getRoleDisplayName(user.role.name), // Используем displayName роли
+					user.isVerified ? "верифицирован" : "не верифицирован", // Пример для булева
+					user.roleExpiration
+						? format(user.roleExpiration, "PPP", { locale: ru })
+						: "", // Форматируем дату
+					format(user.createdAt, "PPP", { locale: ru }),
+					format(user.updatedAt, "PPP", { locale: ru }),
+				]
+					.join(" ")
+					.toLowerCase();
+
+				return userText.includes(searchTerm);
+			});
 		}
 
-		if (filter.lastName) {
-			filteredUsers = filteredUsers.filter((user) =>
-				user.lastName
-					.toLowerCase()
-					.includes(filter.lastName.toLowerCase())
-			);
-		}
-
-		// Сортировка (например, по имени и фамилии)
+		// 3. Сортировка (без изменений)
 		filteredUsers.sort((a, b) => {
 			const nameComparison = a.firstName.localeCompare(b.firstName);
 			if (nameComparison !== 0) return nameComparison;
@@ -110,25 +128,28 @@ export default function UserManagementPage() {
 		});
 
 		return filteredUsers;
-	}, [users, filter]);
+	}, [users, filter, getRoleNameByDisplayName, getRoleDisplayName]); // <--- Добавляем getRoleDisplayName в зависимости
 
-	if (isLoading) {
+	if (isLoadingUsers || isLoadingRoles) {
 		return (
 			<div className="flex items-center justify-center min-h-[400px]">
 				<Loader2 className="h-8 w-8 animate-spin text-primary" />
 				<span className="ml-2 text-muted-foreground">
-					Загрузка пользователей...
+					Загрузка {isLoadingRoles ? "ролей" : "пользователей"}...
 				</span>
 			</div>
 		);
 	}
 
-	if (error) {
+	if (usersError || rolesError) {
 		return (
 			<div className="text-center p-8 text-destructive-foreground bg-destructive rounded-lg">
 				<p className="font-semibold">Ошибка:</p>
-				<p>{error}</p>
-				<Button onClick={fetchUsers} className="mt-4">
+				<p>{usersError || rolesError}</p>
+				<Button
+					onClick={usersError ? fetchUsers : fetchRoles}
+					className="mt-4"
+				>
 					Повторить попытку
 				</Button>
 			</div>
@@ -141,11 +162,7 @@ export default function UserManagementPage() {
 				Управление пользователями
 			</h1>
 
-			<UserFilters
-				filter={filter}
-				onFilterChange={handleFilterChange}
-				availableRoles={allAvailableRoles}
-			/>
+			<UserFilters filter={filter} onFilterChange={handleFilterChange} />
 
 			<UserListTable
 				users={filteredAndSortedUsers}
@@ -157,7 +174,6 @@ export default function UserManagementPage() {
 				isOpen={isEditDrawerOpen}
 				onClose={handleCloseDrawer}
 				onUserUpdated={handleUserUpdated}
-				availableRoles={allAvailableRoles}
 			/>
 		</div>
 	);

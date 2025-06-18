@@ -1,4 +1,3 @@
-// features/user-management/components/UserListTable.tsx
 "use client";
 
 import React from "react";
@@ -14,6 +13,7 @@ import {
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { User } from "@/features/auth/model/types";
+import { useRoleStore } from "../stores/role-store";
 
 interface UserListTableProps {
 	users: User[];
@@ -21,18 +21,13 @@ interface UserListTableProps {
 }
 
 export function UserListTable({ users, onEditUser }: UserListTableProps) {
-	// Группируем пользователей по ролям
-	const groupedUsers = users.reduce((acc, user) => {
-		const roleName = user.role.name || "UNASSIGNED"; // Если роль по какой-то причине отсутствует
-		if (!acc[roleName]) {
-			acc[roleName] = [];
-		}
-		acc[roleName].push(user);
-		return acc;
-	}, {} as Record<string, User[]>);
-
+	const { getRoleDisplayName } = useRoleStore();
 	// Сортируем названия ролей для консистентного отображения
-	const sortedRoleNames = Object.keys(groupedUsers).sort();
+	const sortedUser = users.sort((a, b) => {
+		const roleCompare = a.role.name.localeCompare(b.role.name);
+		if (roleCompare !== 0) return roleCompare;
+		return a.lastName.localeCompare(b.lastName);
+	});
 
 	return (
 		<div className="border rounded-lg overflow-hidden bg-card text-card-foreground shadow-sm">
@@ -48,7 +43,7 @@ export function UserListTable({ users, onEditUser }: UserListTableProps) {
 					</TableRow>
 				</TableHeader>
 				<TableBody>
-					{sortedRoleNames.length === 0 && (
+					{sortedUser.length === 0 && (
 						<TableRow>
 							<TableCell
 								colSpan={6}
@@ -58,46 +53,35 @@ export function UserListTable({ users, onEditUser }: UserListTableProps) {
 							</TableCell>
 						</TableRow>
 					)}
-					{sortedRoleNames.map((roleName) => (
-						<React.Fragment key={roleName}>
-							<TableRow className="bg-muted/30 hover:bg-muted/30">
-								{" "}
-								{/* Отдельный заголовок для группы */}
-								<TableCell
-									colSpan={6}
-									className="font-semibold text-lg py-3"
-								>
-									Роль: {roleName}
+					<React.Fragment>
+						<TableRow className="bg-muted/30 hover:bg-muted/30"></TableRow>
+						{sortedUser.map((user) => (
+							<TableRow key={user.id}>
+								<TableCell>{user.firstName}</TableCell>
+								<TableCell>{user.lastName}</TableCell>
+								<TableCell>{user.email}</TableCell>
+								<TableCell>
+									{getRoleDisplayName(user.role.name)}
+								</TableCell>
+								<TableCell>
+									{user.roleExpiration
+										? format(user.roleExpiration, "PPP", {
+												locale: ru,
+										  })
+										: "Бессрочно"}
+								</TableCell>
+								<TableCell>
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() => onEditUser(user)}
+									>
+										Редактировать
+									</Button>
 								</TableCell>
 							</TableRow>
-							{groupedUsers[roleName].map((user) => (
-								<TableRow key={user.id}>
-									<TableCell>{user.firstName}</TableCell>
-									<TableCell>{user.lastName}</TableCell>
-									<TableCell>{user.email}</TableCell>
-									<TableCell>{user.role.name}</TableCell>
-									<TableCell>
-										{user.roleExpiration
-											? format(
-													user.roleExpiration,
-													"PPP",
-													{ locale: ru }
-											  )
-											: "Бессрочно"}
-									</TableCell>
-									<TableCell>
-										<Button
-											variant="outline"
-											size="sm"
-											onClick={() => onEditUser(user)}
-										>
-											Редактировать
-										</Button>
-									</TableCell>
-								</TableRow>
-							))}
-						</React.Fragment>
-					))}
+						))}
+					</React.Fragment>
 				</TableBody>
 			</Table>
 		</div>
