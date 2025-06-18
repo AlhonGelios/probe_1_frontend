@@ -3,8 +3,6 @@
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format } from "date-fns";
-import { ru } from "date-fns/locale";
 
 import {
 	Sheet,
@@ -20,7 +18,6 @@ import {
 	FormItem,
 	FormLabel,
 	FormMessage,
-	FormDescription,
 } from "@/shared/ui/form";
 import { Input } from "@/shared/ui/input";
 import { Button } from "@/shared/ui/button";
@@ -31,16 +28,12 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/shared/ui/select";
-import { Calendar } from "@/shared/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
-import { cn } from "@/shared/lib/utils";
-import { CalendarIcon, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { changeUser } from "../api/user-api";
 import { User } from "@/features/auth/model/types";
 import { UserEditFormValues, userEditSchema } from "../model/schemas";
 import { useRoleStore } from "../stores/role-store";
-import { z } from "zod";
 import { DatePickerInput } from "@/shared/ui/date-picker-input";
 
 interface UserEditDrawerProps {
@@ -84,12 +77,9 @@ export function UserEditDrawer({
 				firstName: user.firstName,
 				lastName: user.lastName,
 				role: getRoleDisplayName(user.role.name),
-				roleExpiration:
-					user.roleExpiration instanceof Date
-						? user.roleExpiration
-						: user.roleExpiration
-						? new Date(user.roleExpiration)
-						: null,
+				roleExpiration: user.roleExpiration
+					? new Date(user.roleExpiration)
+					: null,
 			});
 		} else {
 			form.reset();
@@ -109,10 +99,7 @@ export function UserEditDrawer({
 				firstName: values.firstName,
 				lastName: values.lastName,
 				role: roleNameForApi,
-				roleExpiration:
-					values.roleExpiration instanceof Date
-						? values.roleExpiration
-						: null,
+				roleExpiration: values.roleExpiration ?? null,
 			};
 
 			const response = await changeUser(payload);
@@ -132,12 +119,12 @@ export function UserEditDrawer({
 		}
 	};
 
-	const availableDisplayNames = roles.map((role) => role.displayName).sort();
+	const availableDisplayNames = roles.map((role) => role.displayName);
 
 	return (
 		<Sheet open={isOpen} onOpenChange={onClose}>
 			<SheetContent
-				className="w-full sm:max-w-md mt-16 md:mt-20 lg:mt-24 mb-4 mr-4 rounded-xl shadow-2xl transition-transform duration-500 ease-out"
+				className="w-full h-fit sm:max-w-md mt-16 md:mt-20 lg:mt-24 mb-4 mr-4 rounded-xl shadow-2xl animate-fade-right animate-duration-500 animate-ease-in-out"
 				side="right"
 			>
 				<SheetHeader>
@@ -154,7 +141,7 @@ export function UserEditDrawer({
 					<Form {...form}>
 						<form
 							onSubmit={form.handleSubmit(onSubmit)}
-							className="space-y-6 py-4 h-full flex flex-col"
+							className="space-y-6 p-6 h-full flex flex-col"
 						>
 							<FormField
 								control={form.control}
@@ -235,21 +222,33 @@ export function UserEditDrawer({
 									</FormItem>
 								)}
 							/>
-							{/* <--- ИСПОЛЬЗУЕМ НОВЫЙ КОМПОНЕНТ DatePickerInput ЗДЕСЬ */}
 							<FormField
 								control={form.control}
 								name="roleExpiration"
 								render={({ field }) => (
-									<DatePickerInput
+									<DatePickerInput<
+										UserEditFormValues,
+										"roleExpiration"
+									>
 										field={field}
 										label="Дата истечения роли (опционально)"
 										placeholder="Выберите дату"
-										description="Установите дату, после которой роль пользователя будет неактивна. Оставьте пустым для бессрочной роли."
-										fromYear={new Date().getFullYear()} // Можете настроить диапазон лет
-										toYear={new Date().getFullYear() + 10}
+										fromYear={new Date().getFullYear()}
+										toYear={new Date().getFullYear() + 5}
+										disabled={{
+											before: new Date(),
+										}}
 									/>
 								)}
 							/>
+							<div className="text-sm text-muted-foreground mb-2">
+								Установите дату, после которой роль будет
+								неактивна. Оставьте пустым для{" "}
+								<span className="text-red-600 font-medium">
+									бессрочной
+								</span>{" "}
+								роли.
+							</div>
 							<div className="mt-auto pt-6">
 								<Button
 									type="submit"

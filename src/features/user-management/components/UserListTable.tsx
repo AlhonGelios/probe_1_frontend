@@ -72,6 +72,7 @@ export function UserListTable({ users, onEditUser }: UserListTableProps) {
 								</TableCell>
 								<TableCell>
 									<Button
+										className="bg-amber-100 hover:bg-amber-200"
 										variant="outline"
 										size="sm"
 										onClick={() => onEditUser(user)}

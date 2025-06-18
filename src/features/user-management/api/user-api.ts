@@ -41,7 +41,7 @@ export const changeUser = async (
 		role: userData.role,
 		// Форматируем дату для отправки на бэкенд, если она есть
 		expirationDate: userData.roleExpiration
-			? userData.roleExpiration.toISOString()
+			? userData.roleExpiration
 			: null,
 	};
 
