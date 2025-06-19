@@ -9,7 +9,9 @@ import { ru } from "date-fns/locale"; // Import locale if needed for date format
 import { UserFilterState } from "@/features/user-management/types";
 import { getAllUsers } from "@/features/user-management/api/user-api";
 import { UserFilters } from "@/features/user-management/components/UserFilters";
-import { UserListTable } from "@/features/user-management/components/UserListTable";
+import StickyTableExample, {
+	UserListTable,
+} from "@/features/user-management/components/UserListTable";
 import { UserEditDrawer } from "@/features/user-management/components/UserEditDrawer";
 import { useRoleStore } from "@/features/user-management/stores/role-store";
 import { Button } from "@/shared/ui/button";
@@ -164,10 +166,12 @@ export default function UserManagementPage() {
 
 			<UserFilters filter={filter} onFilterChange={handleFilterChange} />
 
-			<UserListTable
+			{/* <UserListTable
 				users={filteredAndSortedUsers}
 				onEditUser={handleEditUser}
-			/>
+			/> */}
+
+			<StickyTableExample />
 
 			<UserEditDrawer
 				user={editingUser}

@@ -30,10 +30,13 @@ export function UserListTable({ users, onEditUser }: UserListTableProps) {
 	});
 
 	return (
-		<div className="border rounded-lg shadow-sm overflow-x-auto bg-card border-gray-200 dark:border-gray-700">
+		<div
+			className="border rounded-lg shadow-sm overflow-y-auto bg-card border-gray-200 dark:border-gray-700 sm:rounded-lg"
+			style={{ maxHeight: "calc(100vh - 250px)" }}
+		>
 			<Table className="w-full">
 				<TableHeader>
-					<TableRow>
+					<TableRow className="sticky top-0 bg-card z-10">
 						<TableHead>Имя</TableHead>
 						<TableHead>Фамилия</TableHead>
 						<TableHead>Email</TableHead>
@@ -42,6 +45,7 @@ export function UserListTable({ users, onEditUser }: UserListTableProps) {
 						<TableHead>Действия</TableHead>
 					</TableRow>
 				</TableHeader>
+
 				<TableBody>
 					{sortedUser.length === 0 && (
 						<TableRow>
