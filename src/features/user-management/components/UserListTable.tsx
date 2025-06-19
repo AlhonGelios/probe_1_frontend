@@ -30,8 +30,8 @@ export function UserListTable({ users, onEditUser }: UserListTableProps) {
 	});
 
 	return (
-		<div className="border rounded-lg overflow-hidden bg-card text-card-foreground shadow-sm">
-			<Table>
+		<div className="border rounded-lg shadow-sm overflow-x-auto bg-card border-gray-200 dark:border-gray-700">
+			<Table className="w-full">
 				<TableHeader>
 					<TableRow>
 						<TableHead>Имя</TableHead>
@@ -53,36 +53,33 @@ export function UserListTable({ users, onEditUser }: UserListTableProps) {
 							</TableCell>
 						</TableRow>
 					)}
-					<React.Fragment>
-						<TableRow className="bg-muted/30 hover:bg-muted/30"></TableRow>
-						{sortedUser.map((user) => (
-							<TableRow key={user.id}>
-								<TableCell>{user.firstName}</TableCell>
-								<TableCell>{user.lastName}</TableCell>
-								<TableCell>{user.email}</TableCell>
-								<TableCell>
-									{getRoleDisplayName(user.role.name)}
-								</TableCell>
-								<TableCell>
-									{user.roleExpiration
-										? format(user.roleExpiration, "PPP", {
-												locale: ru,
-										  })
-										: "Бессрочно"}
-								</TableCell>
-								<TableCell>
-									<Button
-										className="bg-amber-100 hover:bg-amber-200"
-										variant="outline"
-										size="sm"
-										onClick={() => onEditUser(user)}
-									>
-										Редактировать
-									</Button>
-								</TableCell>
-							</TableRow>
-						))}
-					</React.Fragment>
+					{sortedUser.map((user) => (
+						<TableRow key={user.id}>
+							<TableCell>{user.firstName}</TableCell>
+							<TableCell>{user.lastName}</TableCell>
+							<TableCell>{user.email}</TableCell>
+							<TableCell>
+								{getRoleDisplayName(user.role.name)}
+							</TableCell>
+							<TableCell>
+								{user.roleExpiration
+									? format(user.roleExpiration, "PPP", {
+											locale: ru,
+									  })
+									: "Бессрочно"}
+							</TableCell>
+							<TableCell>
+								<Button
+									className="bg-amber-100 hover:bg-amber-200"
+									variant="outline"
+									size="sm"
+									onClick={() => onEditUser(user)}
+								>
+									Редактировать
+								</Button>
+							</TableCell>
+						</TableRow>
+					))}
 				</TableBody>
 			</Table>
 		</div>
