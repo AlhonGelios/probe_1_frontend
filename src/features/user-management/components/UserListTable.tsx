@@ -32,7 +32,7 @@ export function UserListTable({ users, onEditUser }: UserListTableProps) {
 	return (
 		<div
 			className="border rounded-lg shadow-sm overflow-y-auto bg-card border-gray-200 dark:border-gray-700 sm:rounded-lg"
-			style={{ maxHeight: "calc(100vh - 250px)" }}
+			style={{ maxHeight: "calc(100vh - 330px)" }}
 		>
 			<Table className="w-full">
 				<TableHeader>
