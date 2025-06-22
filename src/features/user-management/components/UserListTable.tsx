@@ -22,7 +22,7 @@ interface UserListTableProps {
 
 export function UserListTable({ users, onEditUser }: UserListTableProps) {
 	const { getRoleDisplayName } = useRoleStore();
-	// Сортируем названия ролей для консистентного отображения
+
 	const sortedUser = users.sort((a, b) => {
 		const roleCompare = a.role.name.localeCompare(b.role.name);
 		if (roleCompare !== 0) return roleCompare;
@@ -31,10 +31,10 @@ export function UserListTable({ users, onEditUser }: UserListTableProps) {
 
 	return (
 		<div
-			className="border rounded-lg shadow-sm overflow-y-auto bg-card border-gray-200 dark:border-gray-700 sm:rounded-lg"
+			className="border rounded-lg shadow-sm bg-card border-gray-200 dark:border-gray-700 sm:rounded-lg"
 			style={{ maxHeight: "calc(100vh - 330px)" }}
 		>
-			<Table className="w-full">
+			<Table>
 				<TableHeader>
 					<TableRow className="sticky top-0 bg-card z-10">
 						<TableHead>Имя</TableHead>
@@ -45,7 +45,6 @@ export function UserListTable({ users, onEditUser }: UserListTableProps) {
 						<TableHead>Действия</TableHead>
 					</TableRow>
 				</TableHeader>
-
 				<TableBody>
 					{sortedUser.length === 0 && (
 						<TableRow>
