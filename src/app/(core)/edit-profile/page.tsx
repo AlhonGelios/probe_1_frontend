@@ -4,7 +4,7 @@ import {
 	ChangePasswordForm,
 	EditProfileForm,
 	LogoutAllDeviceCard,
-} from "@/features/dashboard";
+} from "@/features/profile";
 
 export default function EditProfilePage() {
 	return (

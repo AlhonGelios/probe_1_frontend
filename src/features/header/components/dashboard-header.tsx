@@ -6,7 +6,7 @@ import { UserDropdown } from "../ui/user-dropdown";
 import { YearSelector } from "../ui/year-selector";
 import { Button } from "@/shared/ui/button";
 import Link from "next/link";
-import { navItems } from "../utils/display-nav-items";
+import { navItems } from "../../profile/utils/display-nav-items";
 import { useAuthStore } from "@/features/auth/model/auth-store";
 import { useShallow } from "zustand/shallow";
 import { usePathname } from "next/navigation";

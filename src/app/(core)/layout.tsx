@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuthStore } from "@/features/auth/model/auth-store";
-import { DashboardHeader } from "@/features/dashboard";
+import { DashboardHeader } from "@/features/profile";
 import { AuthGuard } from "@/widgets/auth-guard/ui";
 import React, { useEffect } from "react";
 

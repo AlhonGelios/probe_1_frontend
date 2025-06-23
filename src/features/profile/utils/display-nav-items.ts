@@ -1,22 +1,22 @@
 export const navItems = [
 	{
 		name: "Управление пользователями",
-		href: "/dashboard/users",
+		href: "/users",
 		roles: ["SUPER_ADMIN"],
 	},
 	{
 		name: "Правила приёма",
-		href: "/dashboard/admission-rules",
+		href: "/admission-rules",
 		roles: ["ADVANCED_USER"],
 	},
 	{
 		name: "Картотека",
-		href: "/dashboard/card-index",
+		href: "/card-index",
 		roles: ["ADVANCED_USER", "REGULAR_USER", "VIEWER"],
 	},
 	{
 		name: "Статистика",
-		href: "/dashboard/statistics",
+		href: "/statistics",
 		roles: ["ADVANCED_USER"],
 	},
 ];

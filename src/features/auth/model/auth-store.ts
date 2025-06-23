@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { User } from "./types";
 import { devtools } from "zustand/middleware";
 import { checkSession, logoutUser } from "../api/auth-api";
-import { fetchCurrentUserProfile } from "@/features/dashboard/api/edit-profile-api";
+import { fetchCurrentUserProfile } from "@/features/profile/api/edit-profile-api";
 import isEqual from "lodash/isEqual";
 
 interface AuthState {

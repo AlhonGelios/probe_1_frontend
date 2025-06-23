@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import {
 	PasswordChangeFormValues,
 	passwordChangeSchema,
-} from "@/features/dashboard/model/shemas";
+} from "@/features/profile/model/shemas";
 import { changePassword } from "../api/edit-profile-api";
 import { PasswordInput } from "@/shared/ui/password-input";
 import { Loader2 } from "lucide-react";

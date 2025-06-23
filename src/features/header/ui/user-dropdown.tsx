@@ -34,7 +34,7 @@ export function UserDropdown() {
 	};
 
 	const handleEditProfile = () => {
-		router.push("/dashboard/edit-profile");
+		router.push("/edit-profile");
 	};
 
 	return (
