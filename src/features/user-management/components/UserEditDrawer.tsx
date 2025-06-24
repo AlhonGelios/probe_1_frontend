@@ -119,7 +119,9 @@ export function UserEditDrawer({
 		}
 	};
 
-	const availableDisplayNames = roles.map((role) => role.displayName);
+	const availableDisplayNames = roles
+		.filter((role) => role.name !== "SUPER_ADMIN")
+		.map((role) => role.displayName);
 
 	return (
 		<Sheet open={isOpen} onOpenChange={onClose}>
