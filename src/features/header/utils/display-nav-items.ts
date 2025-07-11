@@ -1,7 +1,7 @@
 export const navItems = [
 	{
 		name: "Справочники",
-		href: "/dictionary",
+		href: "/directories",
 		roles: ["ADVANCED_USER"],
 	},
 	{
