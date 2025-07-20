@@ -25,10 +25,11 @@ export const getAllDirectories = async (): Promise<Directory[]> => {
 export const createDirectory = async (
 	data: Partial<Directory>
 ): Promise<Directory> => {
-	const response = await fetch("/api/directories", {
+	const response = await fetch(`${BACKEND_URL}/api/directories`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(data),
+		credentials: "include",
 	});
 
 	if (!response.ok) {

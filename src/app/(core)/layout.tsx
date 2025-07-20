@@ -29,7 +29,9 @@ export default function DashboardLayout({
 		<AuthGuard>
 			<div className="flex flex-col min-h-screen">
 				<DashboardHeader />
-				<main className="flex-grow px-6 py-2 h-full">{children}</main>
+				<main className="flex flex-grow px-6 py-2 h-full">
+					{children}
+				</main>
 			</div>
 		</AuthGuard>
 	);
