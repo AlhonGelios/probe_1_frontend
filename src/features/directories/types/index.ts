@@ -17,7 +17,9 @@ export interface DirectoryField {
 	id: string;
 	directoryId: string;
 	name: string;
+	displayName: string;
 	type: string;
+	isSystem: boolean;
 }
 
 export interface DirectoryValue {
