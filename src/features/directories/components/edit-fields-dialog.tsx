@@ -100,7 +100,7 @@ export function EditFieldsDialog({
 						<h3 className="font-semibold mb-2">
 							Существующие поля
 						</h3>
-						<div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+						<div className="space-y-2 max-h-40 overflow-y-auto pr-2">
 							{directory.fields.map((field) => (
 								<div
 									key={field.id}
@@ -216,6 +216,7 @@ export function EditFieldsDialog({
 										isRequired: !!checked,
 									})
 								}
+								disabled={newField.isUnique}
 							/>
 							<Label htmlFor="is-required">Обязательное</Label>
 						</div>
@@ -223,12 +224,16 @@ export function EditFieldsDialog({
 							<Checkbox
 								id="is-unique"
 								checked={newField.isUnique}
-								onCheckedChange={(checked) =>
+								onCheckedChange={(checked) => {
+									const isUniqueChecked = !!checked;
 									setNewField({
 										...newField,
-										isUnique: !!checked,
-									})
-								}
+										isUnique: isUniqueChecked,
+										isRequired: isUniqueChecked
+											? true
+											: newField.isRequired,
+									});
+								}}
 							/>
 							<Label htmlFor="is-unique">Уникальное</Label>
 						</div>

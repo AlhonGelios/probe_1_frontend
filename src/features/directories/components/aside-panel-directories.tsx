@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/shared/ui/button";
 import { Separator } from "@/shared/ui/separator";
 import Link from "next/link";
+import { useYearStore } from "@/features/header/model/year-store";
 import { getAllDirectories, createDirectory } from "../api/dictionaries-api";
 import { Directory } from "../types";
 
@@ -21,6 +22,7 @@ import { Checkbox } from "@/shared/ui/checkbox";
 import { toast } from "sonner";
 
 export default function DictAsidePanel() {
+	const { year } = useYearStore();
 	const [isLoading, setIsLoading] = useState(false);
 	const [dictList, setDictList] = useState<Directory[]>([]);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -36,7 +38,7 @@ export default function DictAsidePanel() {
 		setIsLoading(true);
 		const fetchDictionaries = async () => {
 			try {
-				const directoriesList = await getAllDirectories();
+				const directoriesList = await getAllDirectories(year);
 				setDictList(directoriesList);
 			} catch (error) {
 				console.error("Error fetching directories:", error);
@@ -46,7 +48,7 @@ export default function DictAsidePanel() {
 			}
 		};
 		fetchDictionaries();
-	}, []);
+	}, [year]);
 
 	const handleCreateDirectory = async () => {
 		try {

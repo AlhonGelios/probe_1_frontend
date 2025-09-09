@@ -3,8 +3,14 @@ import { Directory } from "../types";
 const BACKEND_URL =
 	process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3000";
 
-export const getAllDirectories = async (): Promise<Directory[]> => {
-	const response = await fetch(`${BACKEND_URL}/api/directories`, {
+export const getAllDirectories = async (
+	year?: string
+): Promise<Directory[]> => {
+	let url = `${BACKEND_URL}/api/directories`;
+	if (year) {
+		url += `?year=${encodeURIComponent(year)}`;
+	}
+	const response = await fetch(url, {
 		method: "GET",
 		headers: {
 			"Content-Type": "application/json",
