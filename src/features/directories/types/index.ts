@@ -11,6 +11,7 @@ export interface Directory {
 	updatedById?: string | null;
 	fields: DirectoryField[];
 	values: DirectoryValue[];
+	year: number;
 }
 
 export interface DirectoryField {

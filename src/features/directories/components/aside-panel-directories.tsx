@@ -26,12 +26,22 @@ export default function DictAsidePanel() {
 	const [isLoading, setIsLoading] = useState(false);
 	const [dictList, setDictList] = useState<Directory[]>([]);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
-	const [formData, setFormData] = useState({
+	interface FormData {
+		name: string;
+		displayName: string;
+		description: string;
+		isSystem: boolean;
+		isActive: boolean;
+		year: number;
+	}
+
+	const [formData, setFormData] = useState<FormData>({
 		name: "",
 		displayName: "",
 		description: "",
 		isSystem: false,
 		isActive: true,
+		year: parseInt(year, 10),
 	});
 
 	useEffect(() => {
@@ -60,6 +70,7 @@ export default function DictAsidePanel() {
 				description: "",
 				isSystem: false,
 				isActive: true,
+				year: parseInt(year, 10),
 			});
 			setIsDialogOpen(false);
 			toast.success("Справочник успешно создан");

@@ -6,7 +6,7 @@ import {
 	deleteField,
 	getDirectoryById,
 } from "../api/dictionaries-api";
-import { Directory } from "../types";
+import { Directory, DirectoryValue } from "../types";
 import { Loader2 } from "lucide-react";
 import {
 	Table,
@@ -18,6 +18,9 @@ import {
 } from "@/shared/ui/table";
 import { toast } from "sonner";
 import { CreateFieldDto, EditFieldsDialog } from "./edit-fields-dialog";
+import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
+import { upsertFieldValue } from "../api/dictionaries-api";
 
 interface DirectoryContentProps {
 	directoryId: string;
@@ -29,11 +32,24 @@ export default function DirectoryContent({
 	const [directory, setDirectory] = useState<Directory | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [isFieldsDialogOpen, setIsFieldsDialogOpen] = useState(false);
+	const [values, setValues] = useState<DirectoryValue[]>([]);
+	const [newRowValues, setNewRowValues] = useState<Record<string, string>>(
+		{}
+	);
+	const [savingStates, setSavingStates] = useState<Record<string, boolean>>(
+		{}
+	);
 
 	const fetchDirectory = useCallback(async () => {
 		try {
 			const fetchedDirectory = await getDirectoryById(directoryId);
 			setDirectory(fetchedDirectory);
+			setValues([...fetchedDirectory.values]);
+			const newRow: Record<string, string> = {};
+			fetchedDirectory.fields.forEach((field) => {
+				newRow[field.id] = "";
+			});
+			setNewRowValues(newRow);
 		} catch (error) {
 			console.error("Error fetching directory:", error);
 			const errorMessage =
@@ -59,8 +75,8 @@ export default function DirectoryContent({
 		try {
 			await createField(directory.id, newField);
 			toast.success("Поле успешно создано");
-			fetchDirectory(); // Перезагружаем данные, чтобы увидеть новое поле
-			setIsFieldsDialogOpen(false); // Закрываем диалог после успеха
+			fetchDirectory();
+			setIsFieldsDialogOpen(false);
 		} catch (error) {
 			console.error("Error creating field:", error);
 			const errorMessage =
@@ -87,6 +103,69 @@ export default function DirectoryContent({
 		}
 	};
 
+	const handleValueChange = async (
+		valueId: string,
+		fieldId: string,
+		newValue: string
+	) => {
+		// Обновляем локальное состояние
+		const updatedValues = values.map((v) =>
+			v.id === valueId && v.fieldId === fieldId
+				? { ...v, value: newValue }
+				: v
+		);
+		setValues(updatedValues);
+
+		// Сохраняем значение через upsert
+		try {
+			setSavingStates((prev) => ({ ...prev, [valueId]: true }));
+			await upsertFieldValue(fieldId, newValue);
+			toast.success(`Значение для поля сохранено`);
+		} catch (error) {
+			console.error("Ошибка при сохранении значения:", error);
+			toast.error(`Не удалось сохранить значение`);
+		} finally {
+			setSavingStates((prev) => ({ ...prev, [valueId]: false }));
+		}
+	};
+
+	const handleNewRowChange = async (fieldId: string, value: string) => {
+		setNewRowValues((prev) => ({ ...prev, [fieldId]: value }));
+
+		if (value.trim() !== "" && directory) {
+			try {
+				const key = `new_${fieldId}`;
+				setSavingStates((prev) => ({ ...prev, [key]: true }));
+
+				// Сохраняем новое значение
+				const result = await upsertFieldValue(fieldId, value);
+
+				// Обновляем состояние
+				setValues((prev) => [
+					...prev,
+					{
+						id: result.id,
+						directoryId: directory.id,
+						fieldId: fieldId,
+						value: value,
+					},
+				]);
+
+				// Сбрасываем поле в новой строке
+				setNewRowValues((prev) => ({ ...prev, [fieldId]: "" }));
+				toast.success(`Новое значение добавлено`);
+			} catch (error) {
+				console.error("Ошибка при добавлении значения:", error);
+				toast.error(`Не удалось добавить значение`);
+			} finally {
+				setSavingStates((prev) => ({
+					...prev,
+					[`new_${fieldId}`]: false,
+				}));
+			}
+		}
+	};
+
 	if (isLoading) {
 		return <Loader2 className="mx-auto my-10 h-16 w-16 animate-spin" />;
 	}
@@ -96,7 +175,7 @@ export default function DirectoryContent({
 	}
 
 	return (
-		<div className=" bg-card p-6 border rounded-lg shadow-sm justify-self-stretch ">
+		<div className="bg-card p-6 border rounded-lg shadow-sm justify-self-stretch">
 			<div className="flex justify-between items-center mb-4">
 				<div>
 					<h2 className="text-2xl font-bold">
@@ -106,13 +185,15 @@ export default function DirectoryContent({
 						{directory.description}
 					</p>
 				</div>
-				<EditFieldsDialog
-					open={isFieldsDialogOpen}
-					onOpenChange={setIsFieldsDialogOpen}
-					directory={directory}
-					onFieldCreate={handleCreateField}
-					onFieldDelete={handleDeleteField}
-				/>
+				<div>
+					<EditFieldsDialog
+						open={isFieldsDialogOpen}
+						onOpenChange={setIsFieldsDialogOpen}
+						directory={directory}
+						onFieldCreate={handleCreateField}
+						onFieldDelete={handleDeleteField}
+					/>
+				</div>
 			</div>
 			<Table>
 				<TableHeader>
@@ -125,17 +206,65 @@ export default function DirectoryContent({
 					</TableRow>
 				</TableHeader>
 				<TableBody>
-					{directory.values.map((value) => (
+					{values.map((value) => (
 						<TableRow key={value.id}>
 							{directory.fields.map((field) => (
 								<TableCell key={field.id}>
-									{value.fieldId === field.id
-										? value.value
-										: ""}
+									{value.fieldId === field.id ? (
+										<div className="flex items-center">
+											<Input
+												type="text"
+												value={
+													(value.value as string) ||
+													""
+												}
+												onChange={(e) =>
+													handleValueChange(
+														value.id,
+														field.id,
+														e.target.value
+													)
+												}
+												disabled={
+													savingStates[value.id]
+												}
+											/>
+											{savingStates[value.id] && (
+												<Loader2 className="ml-2 h-4 w-4 animate-spin" />
+											)}
+										</div>
+									) : (
+										""
+									)}
 								</TableCell>
 							))}
 						</TableRow>
 					))}
+					<TableRow>
+						{directory.fields.map((field) => (
+							<TableCell key={field.id}>
+								<div className="flex items-center">
+									<Input
+										type="text"
+										value={newRowValues[field.id] || ""}
+										onChange={(e) =>
+											handleNewRowChange(
+												field.id,
+												e.target.value
+											)
+										}
+										placeholder="Новое значение"
+										disabled={
+											savingStates[`new_${field.id}`]
+										}
+									/>
+									{savingStates[`new_${field.id}`] && (
+										<Loader2 className="ml-2 h-4 w-4 animate-spin" />
+									)}
+								</div>
+							</TableCell>
+						))}
+					</TableRow>
 				</TableBody>
 			</Table>
 		</div>

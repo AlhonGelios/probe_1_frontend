@@ -1,4 +1,4 @@
-import { Directory } from "../types";
+import { Directory, DirectoryValue } from "../types";
 
 const BACKEND_URL =
 	process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3000";
@@ -101,6 +101,49 @@ export const deleteField = async (directoryId: string, fieldId: string) => {
 	if (!response.ok) {
 		const errorData = await response.json();
 		throw new Error(errorData.message || "Failed to delete field.");
+	}
+
+	return;
+};
+
+export const upsertFieldValue = async (
+	fieldId: string,
+	value: unknown
+): Promise<DirectoryValue> => {
+	const response = await fetch(`${BACKEND_URL}/api/field-values/upsert`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ fieldId, value }),
+		credentials: "include",
+	});
+
+	if (!response.ok) {
+		const errorData = await response.json();
+		throw new Error(errorData.message || "Failed to upsert field value.");
+	}
+
+	return await response.json();
+};
+
+export const updateDirectoryValues = async (
+	directoryId: string,
+	values: DirectoryValue[]
+) => {
+	const response = await fetch(
+		`${BACKEND_URL}/api/directories/${directoryId}/values`,
+		{
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ values }),
+			credentials: "include",
+		}
+	);
+
+	if (!response.ok) {
+		const errorData = await response.json();
+		throw new Error(
+			errorData.message || "Failed to update directory values."
+		);
 	}
 
 	return;
