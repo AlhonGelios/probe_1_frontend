@@ -5,6 +5,7 @@ import {
 	createField,
 	deleteField,
 	getDirectoryById,
+	upsertFieldValues,
 } from "../api/dictionaries-api";
 import { Directory, DirectoryValue } from "../types";
 import { Loader2 } from "lucide-react";
@@ -20,7 +21,6 @@ import { toast } from "sonner";
 import { CreateFieldDto, EditFieldsDialog } from "./edit-fields-dialog";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
-import { upsertFieldValue } from "../api/dictionaries-api";
 
 interface DirectoryContentProps {
 	directoryId: string;
@@ -36,9 +36,12 @@ export default function DirectoryContent({
 	const [newRowValues, setNewRowValues] = useState<Record<string, string>>(
 		{}
 	);
-	const [savingStates, setSavingStates] = useState<Record<string, boolean>>(
+	const [isEditing, setIsEditing] = useState(false);
+	const [editedValues, setEditedValues] = useState<DirectoryValue[]>([]);
+	const [editedNewRow, setEditedNewRow] = useState<Record<string, string>>(
 		{}
 	);
+	const [isSaving, setIsSaving] = useState(false);
 
 	const fetchDirectory = useCallback(async () => {
 		try {
@@ -103,67 +106,80 @@ export default function DirectoryContent({
 		}
 	};
 
-	const handleValueChange = async (
-		valueId: string,
-		fieldId: string,
-		newValue: string
-	) => {
-		// Обновляем локальное состояние
-		const updatedValues = values.map((v) =>
-			v.id === valueId && v.fieldId === fieldId
-				? { ...v, value: newValue }
-				: v
-		);
-		setValues(updatedValues);
+	const handleEdit = () => {
+		setEditedValues([...values]);
+		setEditedNewRow({ ...newRowValues });
+		setIsEditing(true);
+	};
 
-		// Сохраняем значение через upsert
+	const handleCancel = () => {
+		setIsEditing(false);
+		setEditedValues([]);
+		setEditedNewRow({});
+	};
+
+	const handleSave = async () => {
+		if (!directory) return;
+
 		try {
-			setSavingStates((prev) => ({ ...prev, [valueId]: true }));
-			await upsertFieldValue(fieldId, newValue);
-			toast.success(`Значение для поля сохранено`);
+			setIsSaving(true);
+			// Собираем все значения для сохранения
+			const valuesToSave = [...editedValues];
+
+			// Добавляем новую строку как новые значения
+			for (const [fieldId, value] of Object.entries(editedNewRow)) {
+				if (value.trim() !== "") {
+					valuesToSave.push({
+						fieldId,
+						value,
+					});
+				}
+			}
+
+			await upsertFieldValues(valuesToSave);
+
+			// Обновляем состояние
+			setValues(valuesToSave);
+			const emptyNewRow: Record<string, string> = {};
+			directory.fields.forEach((field) => {
+				emptyNewRow[field.id] = "";
+			});
+			setNewRowValues(emptyNewRow);
+
+			toast.success("Изменения успешно сохранены");
+			setIsEditing(false);
 		} catch (error) {
-			console.error("Ошибка при сохранении значения:", error);
-			toast.error(`Не удалось сохранить значение`);
+			console.error("Ошибка при сохранении:", error);
+			toast.error("Не удалось сохранить изменения");
 		} finally {
-			setSavingStates((prev) => ({ ...prev, [valueId]: false }));
+			setIsSaving(false);
 		}
 	};
 
-	const handleNewRowChange = async (fieldId: string, value: string) => {
-		setNewRowValues((prev) => ({ ...prev, [fieldId]: value }));
+	const handleValueChange = (
+		valueId: string | undefined,
+		fieldId: string,
+		newValue: string
+	) => {
+		if (!isEditing) return;
 
-		if (value.trim() !== "" && directory) {
-			try {
-				const key = `new_${fieldId}`;
-				setSavingStates((prev) => ({ ...prev, [key]: true }));
-
-				// Сохраняем новое значение
-				const result = await upsertFieldValue(fieldId, value);
-
-				// Обновляем состояние
-				setValues((prev) => [
-					...prev,
-					{
-						id: result.id,
-						directoryId: directory.id,
-						fieldId: fieldId,
-						value: value,
-					},
-				]);
-
-				// Сбрасываем поле в новой строке
-				setNewRowValues((prev) => ({ ...prev, [fieldId]: "" }));
-				toast.success(`Новое значение добавлено`);
-			} catch (error) {
-				console.error("Ошибка при добавлении значения:", error);
-				toast.error(`Не удалось добавить значение`);
-			} finally {
-				setSavingStates((prev) => ({
-					...prev,
-					[`new_${fieldId}`]: false,
-				}));
+		const updatedValues = editedValues.map((v) => {
+			// Для существующих значений (с ID) сравниваем по ID и fieldId
+			if (valueId && v.id === valueId && v.fieldId === fieldId) {
+				return { ...v, value: newValue };
 			}
-		}
+			// Для новых значений (без ID) сравниваем только по fieldId
+			if (!valueId && !v.id && v.fieldId === fieldId) {
+				return { ...v, value: newValue };
+			}
+			return v;
+		});
+		setEditedValues(updatedValues);
+	};
+
+	const handleNewRowChange = (fieldId: string, value: string) => {
+		if (!isEditing) return;
+		setEditedNewRow((prev) => ({ ...prev, [fieldId]: value }));
 	};
 
 	if (isLoading) {
@@ -173,6 +189,9 @@ export default function DirectoryContent({
 	if (!directory) {
 		return <p>Выберите справочник для просмотра содержимого.</p>;
 	}
+
+	const currentValues = isEditing ? editedValues : values;
+	const currentNewRow = isEditing ? editedNewRow : newRowValues;
 
 	return (
 		<div className="bg-card p-6 border rounded-lg shadow-sm justify-self-stretch">
@@ -185,7 +204,26 @@ export default function DirectoryContent({
 						{directory.description}
 					</p>
 				</div>
-				<div>
+				<div className="flex space-x-2">
+					{!isEditing ? (
+						<Button onClick={handleEdit}>Редактировать</Button>
+					) : (
+						<>
+							<Button onClick={handleSave} disabled={isSaving}>
+								{isSaving ? (
+									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+								) : null}
+								Сохранить
+							</Button>
+							<Button
+								variant="outline"
+								onClick={handleCancel}
+								disabled={isSaving}
+							>
+								Отмена
+							</Button>
+						</>
+					)}
 					<EditFieldsDialog
 						open={isFieldsDialogOpen}
 						onOpenChange={setIsFieldsDialogOpen}
@@ -206,8 +244,8 @@ export default function DirectoryContent({
 					</TableRow>
 				</TableHeader>
 				<TableBody>
-					{values.map((value) => (
-						<TableRow key={value.id}>
+					{currentValues.map((value, index) => (
+						<TableRow key={value.id || `row-${index}`}>
 							{directory.fields.map((field) => (
 								<TableCell key={field.id}>
 									{value.fieldId === field.id ? (
@@ -225,13 +263,8 @@ export default function DirectoryContent({
 														e.target.value
 													)
 												}
-												disabled={
-													savingStates[value.id]
-												}
+												disabled={!isEditing}
 											/>
-											{savingStates[value.id] && (
-												<Loader2 className="ml-2 h-4 w-4 animate-spin" />
-											)}
 										</div>
 									) : (
 										""
@@ -240,31 +273,29 @@ export default function DirectoryContent({
 							))}
 						</TableRow>
 					))}
-					<TableRow>
-						{directory.fields.map((field) => (
-							<TableCell key={field.id}>
-								<div className="flex items-center">
-									<Input
-										type="text"
-										value={newRowValues[field.id] || ""}
-										onChange={(e) =>
-											handleNewRowChange(
-												field.id,
-												e.target.value
-											)
-										}
-										placeholder="Новое значение"
-										disabled={
-											savingStates[`new_${field.id}`]
-										}
-									/>
-									{savingStates[`new_${field.id}`] && (
-										<Loader2 className="ml-2 h-4 w-4 animate-spin" />
-									)}
-								</div>
-							</TableCell>
-						))}
-					</TableRow>
+					{isEditing && (
+						<TableRow>
+							{directory.fields.map((field) => (
+								<TableCell key={field.id}>
+									<div className="flex items-center">
+										<Input
+											type="text"
+											value={
+												currentNewRow[field.id] || ""
+											}
+											onChange={(e) =>
+												handleNewRowChange(
+													field.id,
+													e.target.value
+												)
+											}
+											placeholder="Новое значение"
+										/>
+									</div>
+								</TableCell>
+							))}
+						</TableRow>
+					)}
 				</TableBody>
 			</Table>
 		</div>

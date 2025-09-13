@@ -10,7 +10,7 @@ export interface Directory {
 	createdById?: string | null;
 	updatedById?: string | null;
 	fields: DirectoryField[];
-	values: DirectoryValue[];
+	records: DirectoryRecord[];
 	year: number;
 }
 
@@ -23,15 +23,19 @@ export interface DirectoryField {
 	isSystem: boolean;
 }
 
-export interface DirectoryValue {
+export interface DirectoryRecord {
 	id: string;
 	directoryId: string;
-	fieldId: string;
-	value: string;
+	createdAt: string;
+	updatedAt: string;
+	createdById?: string | null;
+	updatedById?: string | null;
+	values: DirectoryValue[];
 }
 
-export interface DirectoryRelation {
-	id: string;
-	parentDirectoryId: string;
-	childDirectoryId: string;
+export interface DirectoryValue {
+	id?: string;
+	fieldId: string;
+	recordId: string;
+	value: string;
 }
