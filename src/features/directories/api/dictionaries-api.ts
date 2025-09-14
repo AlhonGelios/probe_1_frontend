@@ -1,4 +1,4 @@
-import { Directory, DirectoryValue } from "../types";
+import { Directory } from "../types";
 
 const BACKEND_URL =
 	process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3000";
@@ -101,6 +101,23 @@ export const deleteField = async (directoryId: string, fieldId: string) => {
 	if (!response.ok) {
 		const errorData = await response.json();
 		throw new Error(errorData.message || "Failed to delete field.");
+	}
+
+	return;
+};
+
+export const deleteDirectory = async (directoryId: string) => {
+	const response = await fetch(
+		`${BACKEND_URL}/api/directories/${directoryId}`,
+		{
+			method: "DELETE",
+			credentials: "include",
+		}
+	);
+
+	if (!response.ok) {
+		const errorData = await response.json();
+		throw new Error(errorData.message || "Failed to delete directory.");
 	}
 
 	return;

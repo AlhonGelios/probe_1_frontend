@@ -3,9 +3,6 @@ import { Toaster } from "sonner";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-const HEADER_HEIGHT = "64px";
-const TOAST_MARGIN_TOP = "16px";
-
 const geistSans = Geist({
 	variable: "--font-geist-sans",
 	subsets: ["latin"],
@@ -32,13 +29,7 @@ export default function RootLayout({
 				className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-[url('/images/welcome-bg.jpg')] bg-cover bg-center`}
 			>
 				{children}
-				<Toaster
-					richColors
-					position="top-right"
-					style={{
-						top: `calc(${HEADER_HEIGHT} + ${TOAST_MARGIN_TOP})`,
-					}}
-				/>
+				<Toaster richColors position="bottom-right" closeButton />
 			</body>
 		</html>
 	);

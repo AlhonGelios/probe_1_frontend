@@ -7,7 +7,6 @@ import {
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
-	DialogTrigger,
 } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -19,7 +18,7 @@ import {
 	SelectValue,
 } from "@/shared/ui/select";
 import { Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Directory } from "../types";
 
@@ -60,8 +59,22 @@ export function EditFieldsDialog({
 	open,
 	onOpenChange,
 }: EditFieldsDialogProps) {
+	const [isDialogOpen, setIsDialogOpen] = useState(open);
 	const [newField, setNewField] =
 		useState<CreateFieldDto>(initialNewFieldState);
+
+	// Синхронизация с пропсом open
+	useEffect(() => {
+		setIsDialogOpen(open);
+	}, [open]);
+
+	const handleDialogClose = (openState: boolean) => {
+		if (!openState) {
+			setNewField(initialNewFieldState); // Сброс формы при закрытии
+			onOpenChange(false);
+		}
+		setIsDialogOpen(openState);
+	};
 
 	const handleCreate = async () => {
 		if (!newField.name || !newField.displayName) {
@@ -72,14 +85,11 @@ export function EditFieldsDialog({
 		let defaultValue: object | undefined;
 
 		await onFieldCreate({ ...newField, defaultValue });
-		setNewField(initialNewFieldState);
+		setNewField(initialNewFieldState); // Сброс формы после создания
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogTrigger asChild>
-				<Button variant="outline">Редактировать поля</Button>
-			</DialogTrigger>
+		<Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
 			<DialogContent className="max-h-[90vh] overflow-y-auto">
 				<DialogHeader>
 					<DialogTitle>Редактирование полей</DialogTitle>

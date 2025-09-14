@@ -5,9 +5,10 @@ import {
 	createField,
 	deleteField,
 	getDirectoryById,
+	deleteDirectory,
 } from "../api/dictionaries-api";
 import { Directory } from "../types";
-import { Loader2 } from "lucide-react";
+import { Loader2, MoreVertical, SquarePen, Trash } from "lucide-react";
 import {
 	Table,
 	TableBody,
@@ -16,8 +17,17 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/shared/ui/table";
+import { Button } from "@/shared/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuTrigger,
+	DropdownMenuContent,
+	DropdownMenuItem,
+} from "@/shared/ui/dropdown-menu";
 import { toast } from "sonner";
 import { CreateFieldDto, EditFieldsDialog } from "./edit-fields-dialog";
+import { useRouter } from "next/navigation";
+import { DeleteDirectoryDialog } from "./delete-directory-dialog";
 
 interface DirectoryContentProps {
 	directoryId: string;
@@ -29,6 +39,9 @@ export default function DirectoryContent({
 	const [directory, setDirectory] = useState<Directory | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [isFieldsDialogOpen, setIsFieldsDialogOpen] = useState(false);
+	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+	const [isDeleting, setIsDeleting] = useState(false);
+	const router = useRouter();
 
 	const fetchDirectory = useCallback(async () => {
 		try {
@@ -60,7 +73,6 @@ export default function DirectoryContent({
 			await createField(directory.id, newField);
 			toast.success("Поле успешно создано");
 			fetchDirectory();
-			setIsFieldsDialogOpen(false);
 		} catch (error) {
 			console.error("Error creating field:", error);
 			const errorMessage =
@@ -87,6 +99,26 @@ export default function DirectoryContent({
 		}
 	};
 
+	const handleDeleteDirectory = async () => {
+		if (!directory) return;
+		setIsDeleting(true);
+		try {
+			await deleteDirectory(directory.id);
+			toast.success("Справочник успешно удален");
+			router.push("/directories");
+		} catch (error) {
+			console.error("Error deleting directory:", error);
+			const errorMessage =
+				error instanceof Error
+					? error.message
+					: "Произошла неизвестная ошибка";
+			toast.error(`Не удалось удалить справочник: ${errorMessage}`);
+		} finally {
+			setIsDeleting(false);
+			setIsDeleteDialogOpen(false);
+		}
+	};
+
 	if (isLoading) {
 		return <Loader2 className="mx-auto my-10 h-16 w-16 animate-spin" />;
 	}
@@ -96,7 +128,7 @@ export default function DirectoryContent({
 	}
 
 	return (
-		<div className="bg-card p-6 border rounded-lg shadow-sm justify-self-stretch">
+		<div className="bg-card -mr-4 p-6 border rounded-lg shadow-sm justify-self-stretch">
 			<div className="flex justify-between items-center mb-4">
 				<div>
 					<h2 className="text-2xl font-bold">
@@ -107,12 +139,44 @@ export default function DirectoryContent({
 					</p>
 				</div>
 				<div className="flex space-x-2">
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon"
+								className="data-[state=open]:bg-accent"
+							>
+								<MoreVertical className="h-4 w-4" />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end">
+							<DropdownMenuItem
+								onSelect={() => setIsFieldsDialogOpen(true)}
+							>
+								<SquarePen className="h-8 w-8" />
+								Редактировать поля
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								className="text-destructive"
+								onSelect={() => setIsDeleteDialogOpen(true)}
+							>
+								<Trash className="h-8 w-8" color="red" />
+								Удалить справочник
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
 					<EditFieldsDialog
 						open={isFieldsDialogOpen}
 						onOpenChange={setIsFieldsDialogOpen}
 						directory={directory}
 						onFieldCreate={handleCreateField}
 						onFieldDelete={handleDeleteField}
+					/>
+					<DeleteDirectoryDialog
+						open={isDeleteDialogOpen}
+						onOpenChange={setIsDeleteDialogOpen}
+						onConfirm={handleDeleteDirectory}
+						isDeleting={isDeleting}
 					/>
 				</div>
 			</div>
