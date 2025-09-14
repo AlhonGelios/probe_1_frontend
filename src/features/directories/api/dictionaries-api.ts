@@ -105,21 +105,3 @@ export const deleteField = async (directoryId: string, fieldId: string) => {
 
 	return;
 };
-
-export const upsertFieldValues = async (values: DirectoryValue[]) => {
-	const response = await fetch(`${BACKEND_URL}/api/field-values/upsert`, {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ values }),
-		credentials: "include",
-	});
-
-	if (!response.ok) {
-		const errorData = await response.json();
-		throw new Error(
-			errorData.message || "Failed to update directory values."
-		);
-	}
-
-	return;
-};

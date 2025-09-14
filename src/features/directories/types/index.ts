@@ -30,7 +30,7 @@ export interface DirectoryRecord {
 	updatedAt: string;
 	createdById?: string | null;
 	updatedById?: string | null;
-	values: DirectoryValue[];
+	recordValue: DirectoryValue[];
 }
 
 export interface DirectoryValue {
@@ -38,4 +38,8 @@ export interface DirectoryValue {
 	fieldId: string;
 	recordId: string;
 	value: string;
+	createdAt: string;
+	updatedAt: string;
+	createdById?: string | null;
+	updatedById?: string | null;
 }

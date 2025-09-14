@@ -18,13 +18,12 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/shared/ui/select";
-import { Textarea } from "@/shared/ui/textarea";
 import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Directory } from "../types";
 
-const FIELD_TYPES = ["STRING", "NUMBER", "DATE", "BOOLEAN", "JSON"] as const;
+const FIELD_TYPES = ["STRING", "NUMBER", "DATE", "BOOLEAN"] as const;
 
 export type CreateFieldDto = {
 	name: string;
@@ -63,7 +62,6 @@ export function EditFieldsDialog({
 }: EditFieldsDialogProps) {
 	const [newField, setNewField] =
 		useState<CreateFieldDto>(initialNewFieldState);
-	const [defaultValueString, setDefaultValueString] = useState("");
 
 	const handleCreate = async () => {
 		if (!newField.name || !newField.displayName) {
@@ -72,18 +70,9 @@ export function EditFieldsDialog({
 		}
 
 		let defaultValue: object | undefined;
-		if (newField.type === "JSON" && defaultValueString) {
-			try {
-				defaultValue = JSON.parse(defaultValueString);
-			} catch {
-				toast.error("Неверный формат JSON в значении по умолчанию.");
-				return;
-			}
-		}
 
 		await onFieldCreate({ ...newField, defaultValue });
 		setNewField(initialNewFieldState);
-		setDefaultValueString("");
 	};
 
 	return (
@@ -137,22 +126,6 @@ export function EditFieldsDialog({
 					<div className="space-y-4 border-t pt-4">
 						<h3 className="font-semibold">Добавить новое поле</h3>
 						<div className="grid gap-2">
-							<Label htmlFor="new-field-name">
-								Системное имя (латиницей)
-							</Label>
-							<Input
-								id="new-field-name"
-								value={newField.name}
-								onChange={(e) =>
-									setNewField({
-										...newField,
-										name: e.target.value,
-									})
-								}
-								placeholder="Например, 'region_code'"
-							/>
-						</div>
-						<div className="grid gap-2">
 							<Label htmlFor="new-field-displayName">
 								Отображаемое имя
 							</Label>
@@ -166,6 +139,22 @@ export function EditFieldsDialog({
 									})
 								}
 								placeholder="Например, 'Код региона'"
+							/>
+						</div>
+						<div className="grid gap-2">
+							<Label htmlFor="new-field-name">
+								Системное имя (латиницей)
+							</Label>
+							<Input
+								id="new-field-name"
+								value={newField.name}
+								onChange={(e) =>
+									setNewField({
+										...newField,
+										name: e.target.value,
+									})
+								}
+								placeholder="Например, 'region_code'"
 							/>
 						</div>
 						<div className="grid gap-2">
@@ -191,21 +180,6 @@ export function EditFieldsDialog({
 								</SelectContent>
 							</Select>
 						</div>
-						{newField.type === "JSON" && (
-							<div className="grid gap-2">
-								<Label htmlFor="new-field-defaultValue">
-									Значение по умолчанию (JSON)
-								</Label>
-								<Textarea
-									id="new-field-defaultValue"
-									value={defaultValueString}
-									onChange={(e) =>
-										setDefaultValueString(e.target.value)
-									}
-									placeholder='Например, {"key": "value"}'
-								/>
-							</div>
-						)}
 						<div className="flex items-center space-x-2">
 							<Checkbox
 								id="is-required"
