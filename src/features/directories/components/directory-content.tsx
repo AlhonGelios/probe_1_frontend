@@ -128,7 +128,7 @@ export default function DirectoryContent({
 	}
 
 	return (
-		<div className="bg-card -mr-4 p-6 border rounded-lg shadow-sm justify-self-stretch">
+		<div className="bg-card -mx-4 p-6 border rounded-lg shadow-sm justify-self-stretch grow">
 			<div className="flex justify-between items-center mb-4">
 				<div>
 					<h2 className="text-2xl font-bold">
