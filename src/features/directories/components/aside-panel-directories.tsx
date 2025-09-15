@@ -1,10 +1,11 @@
 "use client";
 
-import { Loader2, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/shared/ui/button";
 import { Separator } from "@/shared/ui/separator";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { useYearStore } from "@/features/header/model/year-store";
 import { getAllDirectories, createDirectory } from "../api/dictionaries-api";
 import { Directory } from "../types";
@@ -21,19 +22,14 @@ import { Label } from "@/shared/ui/label";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { toast } from "sonner";
 
-export default function DictAsidePanel({
-	isAsideVisible,
-	setIsAsideVisible,
-}: {
-	isAsideVisible: boolean;
-	setIsAsideVisible: (value: boolean) => void;
-}) {
+export default function DictAsidePanel() {
 	const { year } = useYearStore();
+	const params = useParams();
+	const selectedDirectoryId = params.id as string | undefined;
 	const [isLoading, setIsLoading] = useState(false);
 	const [dictList, setDictList] = useState<Directory[]>([]);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-	const toggleAside = () => setIsAsideVisible(!isAsideVisible);
 	interface FormData {
 		name: string;
 		displayName: string;
@@ -90,11 +86,7 @@ export default function DictAsidePanel({
 
 	return (
 		<>
-			<aside
-				className={`bg-card p-6 -mx-4 flex flex-col grow border rounded-lg shadow-sm relative ${
-					!isAsideVisible ? "hidden" : ""
-				}`}
-			>
+			<aside className="bg-card p-6 -mx-4 flex flex-col grow border rounded-lg shadow-sm relative">
 				<h2 className="text-xl font-bold">Общие справочники</h2>
 				<Separator className="my-4" />
 				<nav className="flex flex-col gap-4">
@@ -201,35 +193,25 @@ export default function DictAsidePanel({
 							Нет справочников...
 						</p>
 					) : (
-						dictList.map((dict) => (
-							<ul
-								key={dict.id}
-								className="list-none pl-6 space-y-2 text-sm text-muted-foreground"
-							>
-								<li>
+						<ul className="list-none pl-2 space-y-2 text-sm text-muted-foreground">
+							{dictList.map((dict) => (
+								<li key={dict.id}>
 									<Link
 										href={`/directories/${dict.id}`}
-										className="border-b-2 border-transparent hover:border-current transition-all duration-200"
+										className={`flex py-1 px-5 border-b-2 border-transparent rounded-md hover:bg-gray-100 transition-all duration-400 ${
+											dict.id === selectedDirectoryId
+												? "underline"
+												: ""
+										}`}
 									>
 										{dict.displayName}
 									</Link>
 								</li>
-							</ul>
-						))
+							))}
+						</ul>
 					)}
 				</nav>
 			</aside>
-			<Button
-				variant={"outline"}
-				className="fixed left-0 top-1/2 transform -translate-y-1/2 p-2 rounded-r-lg rounded-l-none z-50 w-6 h-15"
-				onClick={toggleAside}
-			>
-				{isAsideVisible ? (
-					<ChevronLeft className="h-4 w-4" />
-				) : (
-					<ChevronRight className="h-4 w-4" />
-				)}
-			</Button>
 		</>
 	);
 }
