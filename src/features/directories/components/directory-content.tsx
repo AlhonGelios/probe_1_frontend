@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useContext } from "react";
 import {
 	createField,
 	deleteField,
@@ -28,6 +28,7 @@ import { toast } from "sonner";
 import { CreateFieldDto, EditFieldsDialog } from "./edit-fields-dialog";
 import { useRouter } from "next/navigation";
 import { DeleteDirectoryDialog } from "./delete-directory-dialog";
+import { DirectoriesContext } from "@/app/(core)/directories/layout";
 
 interface DirectoryContentProps {
 	directoryId: string;
@@ -42,6 +43,7 @@ export default function DirectoryContent({
 	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
 	const router = useRouter();
+	const { setDictList } = useContext(DirectoriesContext);
 
 	const fetchDirectory = useCallback(async () => {
 		try {
@@ -105,6 +107,15 @@ export default function DirectoryContent({
 		try {
 			await deleteDirectory(directory.id);
 			toast.success("Справочник успешно удален");
+
+			// Обновляем состояние справочников
+			if (setDictList) {
+				setDictList((prev) => {
+					const newList = prev.filter((d) => d.id !== directory.id);
+					return newList;
+				});
+			}
+
 			router.push("/directories");
 		} catch (error) {
 			console.error("Error deleting directory:", error);

@@ -1,23 +1,23 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import { Separator } from "@/shared/ui/separator";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useYearStore } from "@/features/header/model/year-store";
 import { getAllDirectories, createDirectory } from "../api/dictionaries-api";
-import { Directory } from "../types";
 import { toast } from "sonner";
 import { CreateDirectoryDialog } from "./create-directory-dialog";
+import { DirectoriesContext } from "@/app/(core)/directories/layout";
 
 export default function DictAsidePanel() {
 	const { year } = useYearStore();
 	const params = useParams();
 	const selectedDirectoryId = params.id as string | undefined;
 	const [isLoading, setIsLoading] = useState(false);
-	const [dictList, setDictList] = useState<Directory[]>([]);
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
+	const { dictList, setDictList } = useContext(DirectoriesContext);
 
 	interface FormData {
 		name: string;
@@ -51,7 +51,7 @@ export default function DictAsidePanel() {
 			}
 		};
 		fetchDictionaries();
-	}, [year]);
+	}, [year, setDictList]);
 
 	const handleCreateDirectory = async () => {
 		try {
@@ -69,7 +69,9 @@ export default function DictAsidePanel() {
 			toast.success("Справочник успешно создан");
 		} catch (error) {
 			console.error("Error creating directory:", error);
-			toast.error("Не удалось создать справочник");
+			toast.error("Не удалось создать справочник.", {
+				description: `${error}`,
+			});
 		}
 	};
 
