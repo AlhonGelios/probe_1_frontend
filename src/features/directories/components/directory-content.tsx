@@ -6,9 +6,10 @@ import {
 	deleteField,
 	getDirectoryById,
 	deleteDirectory,
+	useGetDirectoryFields,
 } from "../api/dictionaries-api";
 import { Directory } from "../types";
-import { Loader2, MoreVertical, SquarePen, Trash } from "lucide-react";
+import { Loader2, MoreVertical, SquarePen, Trash, Plus } from "lucide-react";
 import {
 	Table,
 	TableBody,
@@ -29,6 +30,7 @@ import { CreateFieldDto, EditFieldsDialog } from "./edit-fields-dialog";
 import { useRouter } from "next/navigation";
 import { DeleteDirectoryDialog } from "./delete-directory-dialog";
 import { DirectoriesContext } from "@/app/(core)/directories/layout";
+import { CreateRecordDialog } from "./create-record-dialog";
 
 interface DirectoryContentProps {
 	directoryId: string;
@@ -40,10 +42,13 @@ export default function DirectoryContent({
 	const [directory, setDirectory] = useState<Directory | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [isFieldsDialogOpen, setIsFieldsDialogOpen] = useState(false);
+	const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
 	const router = useRouter();
 	const { setDictList } = useContext(DirectoriesContext);
+	const { data: fields = [], isLoading: isFieldsLoading } =
+		useGetDirectoryFields(directoryId);
 
 	const fetchDirectory = useCallback(async () => {
 		try {
@@ -150,6 +155,13 @@ export default function DirectoryContent({
 					</p>
 				</div>
 				<div className="flex space-x-2">
+					<Button
+						onClick={() => setIsCreateDialogOpen(true)}
+						disabled={isFieldsLoading}
+					>
+						<Plus className="h-4 w-4 mr-2" />
+						Добавить запись
+					</Button>
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
 							<Button
@@ -189,6 +201,13 @@ export default function DirectoryContent({
 						onConfirm={handleDeleteDirectory}
 						isDeleting={isDeleting}
 					/>
+					{isCreateDialogOpen && (
+						<CreateRecordDialog
+							directoryId={directoryId}
+							fields={fields}
+							onClose={() => setIsCreateDialogOpen(false)}
+						/>
+					)}
 				</div>
 			</div>
 			<Table>

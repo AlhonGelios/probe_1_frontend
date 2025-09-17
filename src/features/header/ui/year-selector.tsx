@@ -24,7 +24,13 @@ export function YearSelector() {
 
 	return (
 		<Select value={year} onValueChange={setYear}>
-			<SelectTrigger className="w-[100px] font-medium">
+			<SelectTrigger
+				className={`w-[100px] font-medium shadow-md ${
+					year === String(currentYear)
+						? "shadow-green-500/50"
+						: "shadow-red-500/50"
+				}`}
+			>
 				<SelectValue placeholder="Год" />
 			</SelectTrigger>
 			<SelectContent className="max-h-[200px] overflow-y-auto">

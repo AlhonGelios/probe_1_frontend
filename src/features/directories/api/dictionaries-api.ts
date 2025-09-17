@@ -1,4 +1,5 @@
-import { Directory } from "../types";
+import { Directory, DirectoryField } from "../types";
+import { useState, useEffect } from "react";
 
 const BACKEND_URL =
 	process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3000";
@@ -104,6 +105,35 @@ export const deleteField = async (directoryId: string, fieldId: string) => {
 	}
 
 	return;
+};
+
+export const useGetDirectoryFields = (directoryId: string) => {
+	const [fields, setFields] = useState<DirectoryField[]>([]);
+	const [isLoading, setIsLoading] = useState(true);
+
+	useEffect(() => {
+		if (!directoryId) {
+			setIsLoading(false);
+			return;
+		}
+
+		const fetchFields = async () => {
+			setIsLoading(true);
+			try {
+				const directory = await getDirectoryById(directoryId);
+				setFields(directory.fields || []);
+			} catch (error) {
+				console.error("Failed to fetch fields:", error);
+				setFields([]);
+			} finally {
+				setIsLoading(false);
+			}
+		};
+
+		fetchFields();
+	}, [directoryId]);
+
+	return { data: fields, isLoading };
 };
 
 export const deleteDirectory = async (directoryId: string) => {
