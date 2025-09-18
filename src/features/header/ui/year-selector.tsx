@@ -34,8 +34,8 @@ export function YearSelector() {
 			<SelectTrigger
 				className={`w-[100px] font-medium shadow-md ${
 					year === String(currentYear)
-						? "shadow-green-500/50"
-						: "shadow-red-500/50"
+						? "shadow-blue-500/50"
+						: "shadow-orange-500/50"
 				}`}
 			>
 				<SelectValue placeholder="Год" />

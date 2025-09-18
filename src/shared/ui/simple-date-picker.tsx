@@ -15,7 +15,7 @@ import { DayPickerProps } from "react-day-picker";
 const isDateInstance = (value: unknown): value is Date => value instanceof Date;
 
 interface SimpleDatePickerProps {
-	label: string;
+	label?: string; // Make label optional
 	value?: Date | null;
 	onChange: (date: Date | null) => void;
 	placeholder?: string;
@@ -69,7 +69,7 @@ export function SimpleDatePicker({
 
 	return (
 		<div className="flex flex-col">
-			<Label>{label}</Label>
+			{label && <Label>{label}</Label>}
 			<div className="relative flex items-center">
 				<IMaskInput
 					mask="dd.MM.yyyy"

@@ -9,14 +9,17 @@ import {
 	DialogTitle,
 } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
+import { ToggleableInput } from "@/shared/ui/toggleable-input";
 import { Label } from "@/shared/ui/label";
 import { useState } from "react";
+import { TriangleAlert } from "lucide-react";
 
 interface Field {
 	id: string;
 	displayName: string;
 	name: string;
 	type: string;
+	isRequired: boolean;
 }
 
 interface CreateRecordDialogProps {
@@ -89,20 +92,37 @@ export const CreateRecordDialog = ({
 
 	const renderFieldInput = (field: Field) => {
 		switch (field.type) {
-			case "TEXT":
+			case "STRING":
 				return (
 					<div className="mb-4">
-						<Label htmlFor={field.id}>{field.name}</Label>
-						<Input
+						<Label
+							htmlFor={field.id}
+							className="m-2 flex justify-between"
+						>
+							{field.displayName}
+							{field.isRequired && (
+								<div className="flex justify-between">
+									<TriangleAlert
+										color="Chocolate"
+										className="h-4"
+									/>
+									<span className="text-gray-400">
+										{" "}
+										обязательное
+									</span>
+								</div>
+							)}
+						</Label>
+						<ToggleableInput
 							id={field.id}
 							value={
 								typeof fieldValues[field.id] === "string"
 									? (fieldValues[field.id] as string)
 									: ""
 							}
-							onChange={(
-								e: React.ChangeEvent<HTMLInputElement>
-							) => handleFieldChange(field.id, e.target.value)}
+							onChange={(value) =>
+								handleFieldChange(field.id, value)
+							}
 						/>
 					</div>
 				);
@@ -110,7 +130,15 @@ export const CreateRecordDialog = ({
 			case "NUMBER":
 				return (
 					<div className="mb-4">
-						<Label htmlFor={field.id}>{field.displayName}</Label>
+						<Label htmlFor={field.id} className="m-2">
+							{field.displayName}
+							{field.isRequired && (
+								<span className="text-red-500">
+									{" "}
+									(обязательное)
+								</span>
+							)}
+						</Label>
 						<Input
 							id={field.id}
 							type="number"
@@ -134,8 +162,16 @@ export const CreateRecordDialog = ({
 			case "DATE":
 				return (
 					<div className="mb-4">
+						<Label className="m-2">
+							{field.displayName}
+							{field.isRequired && (
+								<span className="text-red-500">
+									{" "}
+									(обязательное)
+								</span>
+							)}
+						</Label>
 						<SimpleDatePicker
-							label={field.displayName}
 							value={
 								fieldValues[field.id] instanceof Date
 									? (fieldValues[field.id] as Date)
@@ -161,6 +197,12 @@ export const CreateRecordDialog = ({
 						/>
 						<Label htmlFor={field.id} className="ml-2">
 							{field.displayName}
+							{field.isRequired && (
+								<span className="text-red-500">
+									{" "}
+									(обязательное)
+								</span>
+							)}
 						</Label>
 					</div>
 				);
@@ -168,17 +210,25 @@ export const CreateRecordDialog = ({
 			default:
 				return (
 					<div className="mb-4">
-						<Label htmlFor={field.id}>{field.displayName}</Label>
-						<Input
+						<Label htmlFor={field.id}>
+							{field.displayName}
+							{field.isRequired && (
+								<span className="text-red-500">
+									{" "}
+									(обязательное)
+								</span>
+							)}
+						</Label>
+						<ToggleableInput
 							id={field.id}
 							value={
 								typeof fieldValues[field.id] === "string"
 									? (fieldValues[field.id] as string)
 									: ""
 							}
-							onChange={(
-								e: React.ChangeEvent<HTMLInputElement>
-							) => handleFieldChange(field.id, e.target.value)}
+							onChange={(value) =>
+								handleFieldChange(field.id, value)
+							}
 						/>
 					</div>
 				);

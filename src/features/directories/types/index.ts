@@ -21,6 +21,7 @@ export interface DirectoryField {
 	displayName: string;
 	type: string;
 	isSystem: boolean;
+	isRequired: boolean;
 }
 
 export interface DirectoryRecord {
