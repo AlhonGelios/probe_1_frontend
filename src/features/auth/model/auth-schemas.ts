@@ -4,64 +4,56 @@ import { z } from "zod";
 export const loginSchema = z.object({
 	email: z
 		.string()
-		.email({ message: "Неверный формат email." })
-		.max(100, { message: "email должен содержать максимум 100 символов." }),
+		.email({ error: "Неверный формат email." })
+		.max(100, { error: "email должен содержать максимум 100 символов." }),
 	password: z
 		.string()
-		.max(50, { message: "Пароль должен содержать максимум 50 символов." }),
+		.max(50, { error: "Пароль должен содержать максимум 50 символов." }),
 	recaptchaToken: z.string().optional(),
 });
 
 // Схема для регистрации
 export const registerSchema = z
 	.object({
-		firstName: z.string().min(1, { message: "Имя обязательно." }).max(50, {
-			message: "Имя должено содержать максимум 50 символов.",
+		firstName: z.string().min(1, { error: "Имя обязательно." }).max(50, {
+			error: "Имя должено содержать максимум 50 символов.",
 		}),
-		lastName: z
-			.string()
-			.min(1, { message: "Фамилия обязательна." })
-			.max(50, {
-				message: "Фамилия должна содержать максимум 50 символов.",
-			}),
-		email: z
-			.string()
-			.email({ message: "Неверный формат email." })
-			.max(100, {
-				message: "email должен содержать максимум 100 символов.",
-			}),
+		lastName: z.string().min(1, { error: "Фамилия обязательна." }).max(50, {
+			error: "Фамилия должна содержать максимум 50 символов.",
+		}),
+		email: z.string().email({ error: "Неверный формат email." }).max(100, {
+			error: "email должен содержать максимум 100 символов.",
+		}),
 		password: z
 			.string()
-			.min(8, { message: "Пароль должен содержать минимум 8 символов." })
+			.min(8, { error: "Пароль должен содержать минимум 8 символов." })
 			.max(50, {
-				message: "Пароль должен содержать максимум 50 символов.",
+				error: "Пароль должен содержать максимум 50 символов.",
 			})
 			.regex(/[a-z]/, {
-				message:
-					"Пароль должен содержать хотя бы одну строчную латинскую букву.",
+				error: "Пароль должен содержать хотя бы одну строчную латинскую букву.",
 			})
 			.regex(/[A-Z]/, {
-				message:
-					"Пароль должен содержать хотя бы одну заглавную латинскую букву.",
+				error: "Пароль должен содержать хотя бы одну заглавную латинскую букву.",
 			})
 			.regex(/[0-9]/, {
-				message: "Пароль должен содержать хотя бы одну цифру.",
+				error: "Пароль должен содержать хотя бы одну цифру.",
 			})
 			.regex(/[^a-zA-Z0-9]/, {
-				message: "Пароль должен содержать хотя бы один спецсимвол.",
+				error: "Пароль должен содержать хотя бы один спецсимвол.",
 			}),
 		confirmPassword: z.string(),
 		recaptchaToken: z
 			.string()
-			.min(1, { message: "Подтвердите, что вы не робот." }),
+			.min(1, { error: "Подтвердите, что вы не робот." }),
 	})
 	.refine((data) => data.password === data.confirmPassword, {
-		message: "Пароли не совпадают.",
+		error: "Пароли не совпадают.",
 		path: ["confirmPassword"], // Ошибка будет отображаться под полем confirmPassword
 	});
 
 export const forgotPasswordSchema = z.object({
-	email: z.string().email({ message: "Неверный формат email." }),
+	email: z.string().email({ error: "Неверный формат email." }),
 	recaptchaToken: z
 		.string()
 		.min(1, "Пожалуйста, подтвердите, что вы не робот."),
@@ -73,7 +65,7 @@ export const resetPasswordSchema = z
 			.string()
 			.min(8, "Пароль должен быть не менее 8 символов.")
 			.max(50, {
-				message: "Пароль должен содержать максимум 50 символов.",
+				error: "Пароль должен содержать максимум 50 символов.",
 			})
 			.regex(
 				/[a-z]/,
@@ -91,7 +83,7 @@ export const resetPasswordSchema = z
 		confirmPassword: z.string(),
 	})
 	.refine((data) => data.password === data.confirmPassword, {
-		message: "Пароли не совпадают.",
+		error: "Пароли не совпадают.",
 		path: ["confirmPassword"],
 	});
 

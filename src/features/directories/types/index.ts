@@ -14,12 +14,14 @@ export interface Directory {
 	year: number;
 }
 
+export type FieldType = "STRING" | "NUMBER" | "BOOLEAN" | "DATE";
+
 export interface DirectoryField {
 	id: string;
 	directoryId: string;
 	name: string;
 	displayName: string;
-	type: string;
+	type: FieldType;
 	isSystem: boolean;
 	isRequired: boolean;
 }

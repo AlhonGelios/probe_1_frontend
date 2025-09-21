@@ -10,10 +10,10 @@ import {
 } from "@/shared/ui/dialog";
 import { Input } from "@/shared/ui/input";
 import { ToggleableInput } from "@/shared/ui/toggleable-input";
-import { useForm } from "react-hook-form";
+import { useForm, Path } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { TriangleAlert } from "lucide-react";
+import { z } from "zod";
 import {
 	Form,
 	FormControl,
@@ -22,82 +22,37 @@ import {
 	FormLabel,
 	FormMessage,
 } from "@/shared/ui/form";
+import { DirectoryField } from "../types";
+import { makeFormSchema } from "../model/create-record-shemas";
 
-interface Field {
-	id: string;
-	displayName: string;
-	name: string;
-	type: string;
-	isRequired: boolean;
-}
-
-interface CreateRecordDialogProps {
+interface CreateRecordDialogProps<F extends readonly DirectoryField[]> {
 	directoryId: string;
-	fields: Field[];
+	fields: F;
 	onClose: () => void;
 }
 
-export const CreateRecordDialog = ({
+export function CreateRecordDialog<F extends readonly DirectoryField[]>({
 	directoryId,
 	fields,
 	onClose,
-}: CreateRecordDialogProps) => {
-	// Упрощенная схема валидации - только базовые проверки типов
-	const formSchema = z.object(
-		fields.reduce((acc: Record<string, z.ZodTypeAny>, field) => {
-			switch (field.type) {
-				case "STRING":
-					acc[field.id] = z.string().optional().nullable();
-					break;
-				case "NUMBER":
-					acc[field.id] = z.number().optional().nullable();
-					break;
-				case "DATE":
-					acc[field.id] = z.union([z.date(), z.null()]).optional();
-					break;
-				case "BOOLEAN":
-					acc[field.id] = z.boolean().optional().nullable();
-					break;
-				default:
-					acc[field.id] = z.string().optional().nullable();
-			}
-			return acc;
-		}, {})
-	);
+}: CreateRecordDialogProps<F>) {
+	const formSchema = makeFormSchema(fields);
 
 	type FormValues = z.infer<typeof formSchema>;
+	type FieldValues = string | number | boolean | Date | null | undefined;
 
 	const form = useForm<FormValues>({
 		resolver: zodResolver(formSchema),
-		defaultValues: fields.reduce(
-			(acc: Record<string, string | number | boolean | null>, field) => {
-				acc[field.id] =
-					field.type === "BOOLEAN"
-						? false
-						: field.type === "NUMBER"
-						? 0
-						: "";
-				return acc;
-			},
-			{}
-		),
 	});
 
-	const shouldSkipField = (
-		field: Field,
-		value: string | number | boolean | Date | null | undefined
-	) => {
-		// Для необязательных полей пропускаем пустые значения
+	const shouldSkipField = (field: DirectoryField, value: FieldValues) => {
 		if (!field.isRequired) {
-			// Для полей типа DATE пропускаем null
 			if (field.type === "DATE" && value === null) {
 				return true;
 			}
-			// Проверяем строки на пустоту или пробелы
 			if (typeof value === "string" && value.trim() === "") {
 				return true;
 			}
-			// Проверяем на undefined
 			if (value === undefined) {
 				return true;
 			}
@@ -106,52 +61,16 @@ export const CreateRecordDialog = ({
 	};
 
 	const onSubmit = (values: FormValues) => {
-		// Проверка обязательных полей
-		const errors: string[] = [];
-		fields.forEach((field) => {
-			if (field.isRequired) {
-				const value = values[field.id];
-				let isEmpty = false;
-
-				if (field.type === "DATE") {
-					// Для дат проверяем только null/undefined
-					isEmpty = value === null || value === undefined;
-				} else if (typeof value === "string") {
-					// Для строк проверяем пустоту и пробелы
-					isEmpty = value.trim() === "";
-				} else {
-					// Для остальных типов проверяем на пустоту
-					isEmpty =
-						value === null || value === undefined || value === "";
-				}
-
-				if (isEmpty) {
-					errors.push(
-						`Поле "${field.displayName}" обязательно для заполнения`
-					);
-					form.setError(field.id, {
-						type: "required",
-						message: "Обязательное поле",
-					});
-				}
-			}
-		});
-
-		if (errors.length > 0) {
-			console.error("Ошибки валидации:", errors);
-			return;
-		}
-
 		const validatedValues = fields
 			.map((field) => ({
 				fieldId: field.id,
-				value: values[field.id],
+				value: values[field.name as keyof FormValues],
 			}))
 			.filter(
 				(item) =>
 					!shouldSkipField(
 						fields.find((f) => f.id === item.fieldId)!,
-						item.value
+						item.value as FieldValues
 					)
 			);
 
@@ -169,12 +88,12 @@ export const CreateRecordDialog = ({
 		onClose();
 	};
 
-	const renderFieldInput = (field: Field) => {
+	const renderFieldInput = (field: DirectoryField) => {
 		return (
 			<FormField
 				key={field.id}
 				control={form.control}
-				name={field.id}
+				name={field.name as Path<FormValues>}
 				render={({ field: formField }) => (
 					<FormItem className="mb-4">
 						{field.type !== "BOOLEAN" && (
@@ -230,12 +149,6 @@ export const CreateRecordDialog = ({
 										className="ml-2"
 									>
 										{field.displayName}
-										{field.isRequired && (
-											<span className="text-red-500">
-												{" "}
-												(обязательное)
-											</span>
-										)}
 									</FormLabel>
 								</div>
 							) : (
@@ -276,4 +189,4 @@ export const CreateRecordDialog = ({
 			</DialogContent>
 		</Dialog>
 	);
-};
+}
