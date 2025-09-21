@@ -1,3 +1,4 @@
+import { UpdateFieldDto } from "../components/edit-fields-dialog";
 import { Directory, DirectoryField } from "../types";
 import { useState, useEffect, useCallback } from "react";
 
@@ -70,6 +71,29 @@ export const getDirectoryById = async (id: string): Promise<Directory> => {
 export const createField = async (
 	directoryId: string,
 	data: { name: string; type: string }
+) => {
+	const response = await fetch(
+		`${BACKEND_URL}/api/directories/${directoryId}/fields`,
+		{
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(data),
+			credentials: "include",
+		}
+	);
+
+	if (!response.ok) {
+		const errorData = await response.json();
+		throw new Error(errorData.message || "Failed to create field.");
+	}
+
+	const result = await response.json();
+	return result;
+};
+
+export const updateField = async (
+	directoryId: string,
+	data: UpdateFieldDto
 ) => {
 	const response = await fetch(
 		`${BACKEND_URL}/api/directories/${directoryId}/fields`,

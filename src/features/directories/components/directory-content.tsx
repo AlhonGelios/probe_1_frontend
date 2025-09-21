@@ -7,6 +7,7 @@ import {
 	getDirectoryById,
 	deleteDirectory,
 	useGetDirectoryFields,
+	updateField,
 } from "../api/dictionaries-api";
 import { Directory } from "../types";
 import { Loader2, MoreVertical, SquarePen, Trash, Plus } from "lucide-react";
@@ -26,7 +27,11 @@ import {
 	DropdownMenuItem,
 } from "@/shared/ui/dropdown-menu";
 import { toast } from "sonner";
-import { CreateFieldDto, EditFieldsDialog } from "./edit-fields-dialog";
+import {
+	CreateFieldDto,
+	EditFieldsDialog,
+	UpdateFieldDto,
+} from "./edit-fields-dialog";
 import { useRouter } from "next/navigation";
 import { DeleteDirectoryDialog } from "./delete-directory-dialog";
 import { DirectoriesContext } from "@/app/(core)/directories/layout";
@@ -82,7 +87,7 @@ export default function DirectoryContent({
 		try {
 			await createField(directory.id, newField);
 			toast.success("Поле успешно создано");
-			refetchFields(); // Вызываем повторный запрос полей
+			refetchFields();
 		} catch (error) {
 			console.error("Error creating field:", error);
 			const errorMessage =
@@ -90,6 +95,25 @@ export default function DirectoryContent({
 					? error.message
 					: "Произошла неизвестная ошибка";
 			toast.error(`Не удалось создать поле: ${errorMessage}`);
+		}
+	};
+
+	const handleUpdateField = async (
+		fieldId: string,
+		updatedField: UpdateFieldDto
+	) => {
+		if (!directory) return;
+		try {
+			await updateField(directory.id, { ...updatedField, id: fieldId });
+			toast.success("Поле успешно обновлено");
+			refetchFields();
+		} catch (error) {
+			console.error("Error updating field:", error);
+			const errorMessage =
+				error instanceof Error
+					? error.message
+					: "Произошла неизвестная ошибка";
+			toast.error(`Не удалось обновить поле: ${errorMessage}`);
 		}
 	};
 
@@ -197,6 +221,7 @@ export default function DirectoryContent({
 						fields={fields}
 						onFieldCreate={handleCreateField}
 						onFieldDelete={handleDeleteField}
+						onFieldUpdate={handleUpdateField}
 					/>
 					<DeleteDirectoryDialog
 						open={isDeleteDialogOpen}

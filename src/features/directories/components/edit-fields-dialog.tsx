@@ -31,7 +31,7 @@ export type CreateFieldDto = {
 	type: (typeof FIELD_TYPES)[number];
 	isRequired?: boolean;
 	isUnique?: boolean;
-	defaultValue?: object;
+	defaultValue?: string;
 	isSystem: boolean;
 };
 
@@ -66,7 +66,7 @@ export function EditFieldsDialog({
 	fields,
 	onFieldCreate,
 	onFieldDelete,
-	onFieldUpdate, // Получаем новую функцию
+	onFieldUpdate,
 	open,
 	onOpenChange,
 }: EditFieldsDialogProps) {
@@ -115,7 +115,7 @@ export function EditFieldsDialog({
 			return;
 		}
 
-		let defaultValue: object | undefined;
+		let defaultValue: string | undefined;
 
 		await onFieldCreate({ ...newField, defaultValue });
 		setNewField(initialNewFieldState); // Сброс формы после создания
@@ -124,14 +124,7 @@ export function EditFieldsDialog({
 	const handleUpdate = async () => {
 		if (!editedField) return;
 
-		// Здесь можно добавить валидацию
-		if (!editedField.name || !editedField.displayName) {
-			toast.error("Системное и отображаемое имя поля обязательны.");
-			return;
-		}
-
-		const { id, ...updateData } = editedField; // Исключаем id и isSystem из данных для API
-		await onFieldUpdate(id, updateData as UpdateFieldDto);
+		await onFieldUpdate(editedField.id, editedField);
 		setMode("create");
 		setSelectedField(null);
 		setEditedField(null);
@@ -394,7 +387,7 @@ export function EditFieldsDialog({
 											isUnique: isUniqueChecked,
 											isRequired: isUniqueChecked
 												? true
-												: editedField?.isRequired,
+												: !!editedField?.isRequired,
 										});
 									}}
 									disabled={isUniqueDisabled}
