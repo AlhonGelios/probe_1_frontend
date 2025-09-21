@@ -47,8 +47,11 @@ export default function DirectoryContent({
 	const [isDeleting, setIsDeleting] = useState(false);
 	const router = useRouter();
 	const { setDictList } = useContext(DirectoriesContext);
-	const { data: fields = [], isLoading: isFieldsLoading } =
-		useGetDirectoryFields(directoryId);
+	const {
+		data: fields = [],
+		isLoading: isFieldsLoading,
+		refetch: refetchFields,
+	} = useGetDirectoryFields(directoryId);
 
 	const fetchDirectory = useCallback(async () => {
 		try {
@@ -79,7 +82,7 @@ export default function DirectoryContent({
 		try {
 			await createField(directory.id, newField);
 			toast.success("Поле успешно создано");
-			fetchDirectory();
+			refetchFields(); // Вызываем повторный запрос полей
 		} catch (error) {
 			console.error("Error creating field:", error);
 			const errorMessage =
@@ -95,7 +98,7 @@ export default function DirectoryContent({
 		try {
 			await deleteField(directory.id, fieldId);
 			toast.success("Поле успешно удалено");
-			fetchDirectory();
+			refetchFields(); // Вызываем повторный запрос полей
 		} catch (error) {
 			console.error("Error deleting field:", error);
 			const errorMessage =
@@ -191,7 +194,7 @@ export default function DirectoryContent({
 					<EditFieldsDialog
 						open={isFieldsDialogOpen}
 						onOpenChange={setIsFieldsDialogOpen}
-						directory={directory}
+						fields={fields}
 						onFieldCreate={handleCreateField}
 						onFieldDelete={handleDeleteField}
 					/>
@@ -210,10 +213,11 @@ export default function DirectoryContent({
 					)}
 				</div>
 			</div>
+			{/* Здесь используем fields из useGetDirectoryFields */}
 			<Table>
 				<TableHeader>
 					<TableRow>
-						{directory.fields.map((field) => (
+						{fields.map((field) => (
 							<TableHead key={field.id}>
 								{field.displayName}
 							</TableHead>
@@ -223,7 +227,7 @@ export default function DirectoryContent({
 				<TableBody>
 					{directory.records.map((record, index) => (
 						<TableRow key={record.id || `row-${index}`}>
-							{directory.fields.map((field) => (
+							{fields.map((field) => (
 								<TableCell key={field.id}>
 									{
 										record.recordValue.find(
