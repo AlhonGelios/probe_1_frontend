@@ -1,4 +1,7 @@
-import { UpdateFieldDto } from "../components/edit-fields-dialog";
+import {
+	CreateFieldDto,
+	UpdateFieldDto,
+} from "../components/edit-fields-dialog";
 import { Directory, DirectoryField } from "../types";
 import { useState, useEffect, useCallback } from "react";
 
@@ -70,15 +73,7 @@ export const getDirectoryById = async (id: string): Promise<Directory> => {
 
 export const createField = async (
 	directoryId: string,
-	data: {
-		name: string;
-		displayName: string;
-		type: string;
-		isRequired?: boolean;
-		isUnique?: boolean;
-		defaultValue?: string;
-		isSystem: boolean;
-	}
+	data: CreateFieldDto
 ) => {
 	const response = await fetch(
 		`${BACKEND_URL}/api/directories/${directoryId}/fields`,
@@ -107,7 +102,7 @@ export const updateField = async (
 	const response = await fetch(
 		`${BACKEND_URL}/api/directories/${directoryId}/fields/${fieldId}`,
 		{
-			method: "PUT",
+			method: "PATCH",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(data),
 			credentials: "include",

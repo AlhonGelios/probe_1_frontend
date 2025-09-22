@@ -18,7 +18,7 @@ import {
 	SelectValue,
 } from "@/shared/ui/select";
 import { Switch } from "@/shared/ui/switch";
-import { Plus, Trash2, Pencil } from "lucide-react"; // Добавил Pencil для редактирования
+import { Plus, Trash2, Pencil } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { DirectoryField } from "../types";
@@ -39,10 +39,22 @@ export type CreateFieldDto = {
 	isSystem: boolean;
 };
 
-// Новый тип для DTO редактирования поля
-export type UpdateFieldDto = Omit<CreateFieldDto, "isSystem"> & {
-	id: string;
+export type UpdateFieldDto = {
+	name?: string;
+	displayName?: string;
+	type?: (typeof FIELD_TYPES)[number];
+	isRequired?: boolean;
+	isUnique?: boolean;
+	defaultValue?: string;
 };
+
+const UPDATABLE_FIELDS = [
+	"name",
+	"displayName",
+	"type",
+	"isRequired",
+	"isUnique",
+] as const;
 
 const initialNewFieldState: CreateFieldDto = {
 	name: "",
@@ -124,7 +136,6 @@ export function EditFieldsDialog({
 			return;
 		}
 
-		// Валидация значения по умолчанию, если оно указано
 		if (hasDefaultValue && newField.defaultValue) {
 			const validationError = validateDefaultValue(
 				newField.type,
@@ -139,7 +150,6 @@ export function EditFieldsDialog({
 		}
 
 		try {
-			// Установка значения по умолчанию в зависимости от состояния чекбокса
 			const finalDefaultValue = hasDefaultValue
 				? newField.defaultValue
 				: undefined;
@@ -154,22 +164,47 @@ export function EditFieldsDialog({
 				isSystem: newField.isSystem,
 			};
 
-			await createField(directoryId || "", fieldData);
+			await createField(directoryId, fieldData);
 			onRefetchFields();
 			toast.success("Поле успешно создано");
 
-			setNewField(initialNewFieldState); // Сброс формы после создания
-			setHasDefaultValue(false); // Сброс чекбокса
+			setNewField(initialNewFieldState);
+			setHasDefaultValue(false);
 		} catch (error) {
 			console.error("Error creating field:", error);
 			toast.error("Ошибка при создании поля");
 		}
 	};
 
-	const handleUpdate = async () => {
-		if (!editedField) return;
+	// Универсальная функция для создания объекта с изменившимися полями
+	const createChangedFields = (
+		original: DirectoryField,
+		updated: DirectoryField,
+		hasDefaultValue: boolean
+	): UpdateFieldDto => {
+		// Создаем объект только с изменившимися полями
+		const changedFields = UPDATABLE_FIELDS.reduce((acc, field) => {
+			if (updated[field] !== original[field]) {
+				(acc as Record<string, unknown>)[field] = updated[field];
+			}
+			return acc;
+		}, {} as UpdateFieldDto);
 
-		// Валидация значения по умолчанию, если оно указано
+		// Обрабатываем defaultValue с учетом чекбокса
+		const finalDefaultValue = hasDefaultValue
+			? updated.defaultValue
+			: undefined;
+
+		if (finalDefaultValue !== original.defaultValue) {
+			changedFields.defaultValue = finalDefaultValue;
+		}
+
+		return changedFields;
+	};
+
+	const handleUpdate = async () => {
+		if (!editedField || !selectedField) return;
+
 		if (hasDefaultValueEdit && editedField.defaultValue) {
 			const validationError = validateDefaultValue(
 				editedField.type,
@@ -184,19 +219,19 @@ export function EditFieldsDialog({
 		}
 
 		try {
-			// Обновляем defaultValue в зависимости от состояния чекбокса
-			const updatedField = {
-				...editedField,
-				defaultValue: hasDefaultValueEdit
-					? editedField.defaultValue
-					: undefined,
-			};
-
-			await updateField(
-				selectedField?.id || "",
-				editedField.id,
-				updatedField
+			const updatedField = createChangedFields(
+				selectedField,
+				editedField,
+				hasDefaultValueEdit
 			);
+
+			// Проверяем, есть ли изменения
+			if (Object.keys(updatedField).length === 0) {
+				toast.error("Нет изменений для сохранения");
+				return;
+			}
+
+			await updateField(directoryId, editedField.id, updatedField);
 			onRefetchFields();
 			toast.success("Поле успешно обновлено");
 
@@ -227,18 +262,17 @@ export function EditFieldsDialog({
 
 	const isUniqueDisabled = mode === "edit" && editedField?.isSystem;
 
-	// Функция валидации значения по умолчанию
 	const validateDefaultValue = (
 		fieldType: string,
 		value: string
 	): string | null => {
 		if (!value.trim()) {
-			return null; // Пустое значение валидно
+			return null;
 		}
 
 		switch (fieldType) {
 			case "STRING":
-				return null; // Любая строка валидна
+				return null;
 			case "NUMBER":
 				const numValue = Number(value);
 				if (isNaN(numValue)) {
@@ -261,7 +295,6 @@ export function EditFieldsDialog({
 		}
 	};
 
-	// Функция для рендеринга поля ввода значения по умолчанию в зависимости от типа
 	const renderDefaultValueInput = (
 		fieldType: string,
 		value: string,
@@ -311,7 +344,6 @@ export function EditFieldsDialog({
 					</div>
 				);
 			case "DATE":
-				// Для даты нам нужно адаптировать SimpleDatePicker для работы со строковым значением
 				const dateValue = value ? new Date(value) : null;
 				return (
 					<SimpleDatePicker
@@ -383,6 +415,8 @@ export function EditFieldsDialog({
 												field.type,
 												field.isRequired && "Required",
 												field.isUnique && "Unique",
+												field.defaultValue &&
+													"DefaultValue",
 											]
 												.filter(Boolean)
 												.join(", ")}
@@ -393,7 +427,7 @@ export function EditFieldsDialog({
 										variant="ghost"
 										size="icon"
 										onClick={(e) => {
-											e.stopPropagation(); // Останавливаем событие, чтобы не сработал onClick на li
+											e.stopPropagation();
 											handleDelete(field.id);
 										}}
 										disabled={field.isSystem}
@@ -411,7 +445,6 @@ export function EditFieldsDialog({
 						</ul>
 					</div>
 					<Separator orientation="vertical" />
-					{/* Условный рендеринг формы */}
 					{mode === "create" ? (
 						<div className="flex flex-col space-y-4 flex-1">
 							<div className="space-y-4 flex-1">
@@ -520,7 +553,6 @@ export function EditFieldsDialog({
 										onCheckedChange={(checked) => {
 											const hasDefault = !!checked;
 											setHasDefaultValue(hasDefault);
-											// Очищаем значение по умолчанию при выключении чекбокса
 											if (!hasDefault) {
 												setNewField({
 													...newField,
