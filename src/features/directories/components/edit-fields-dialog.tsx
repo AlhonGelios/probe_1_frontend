@@ -18,7 +18,7 @@ import {
 	SelectValue,
 } from "@/shared/ui/select";
 import { Switch } from "@/shared/ui/switch";
-import { Plus, Trash2, Pencil } from "lucide-react";
+import { Plus, Trash2, Pencil, TriangleAlert } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { DirectoryField } from "../types";
@@ -26,6 +26,7 @@ import { createField, deleteField, updateField } from "../api/dictionaries-api";
 import { Separator } from "@/shared/ui/separator";
 import { ToggleableInput } from "@/shared/ui/toggleable-input";
 import { SimpleDatePicker } from "@/shared/ui/simple-date-picker";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
 
 const FIELD_TYPES = ["STRING", "NUMBER", "DATE", "BOOLEAN"] as const;
 
@@ -477,7 +478,10 @@ export function EditFieldsDialog({
 										onChange={(e) =>
 											setNewField({
 												...newField,
-												name: e.target.value,
+												name: e.target.value.replace(
+													/[^a-zA-Z0-9_]/g,
+													""
+												),
 											})
 										}
 										placeholder="Например, 'region_code'"
@@ -615,18 +619,39 @@ export function EditFieldsDialog({
 									<Label htmlFor="edit-field-name">
 										Системное имя (латиницей)
 									</Label>
-									<Input
-										id="edit-field-name"
-										value={editedField?.name}
-										onChange={(e) =>
-											setEditedField({
-												...editedField!,
-												name: e.target.value,
-											})
-										}
-										placeholder="Например, 'region_code'"
-										disabled // Системное имя нельзя изменять после создания
-									/>
+									<div className="relative">
+										<Input
+											id="edit-field-name"
+											value={editedField?.name}
+											onChange={(e) => {
+												const filtered =
+													e.target.value.replace(
+														/[^a-zA-Z0-9_]/g,
+														""
+													);
+												setEditedField({
+													...editedField!,
+													name: filtered,
+												});
+											}}
+											placeholder="Например, 'region_code'"
+											className="pr-8" // добавляем отступ справа под иконку
+										/>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<TriangleAlert className="absolute right-2 top-1/2 -translate-y-1/2 text-orange-500 w-4 h-4" />
+											</TooltipTrigger>
+											<TooltipContent className="max-w-70">
+												<p>
+													Изменяйте поле осторожно —
+													его значения используются в
+													логике приложения. Перед
+													изменением проверяйте
+													документацию.
+												</p>
+											</TooltipContent>
+										</Tooltip>
+									</div>
 								</div>
 								<div className="grid gap-2">
 									<Label htmlFor="edit-field-type">
@@ -640,7 +665,6 @@ export function EditFieldsDialog({
 												type: value as CreateFieldDto["type"],
 											})
 										}
-										disabled // Тип поля нельзя изменять
 									>
 										<SelectTrigger id="edit-field-type">
 											<SelectValue placeholder="Выберите тип" />
