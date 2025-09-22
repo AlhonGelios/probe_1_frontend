@@ -20,7 +20,9 @@ interface UserFiltersProps {
 export function UserFilters({ filter, onFilterChange }: UserFiltersProps) {
 	const { roles, isLoading, error } = useRoleStore();
 
-	const availableDisplayNames = roles.map((role) => role.displayName);
+	const availableDisplayNames = roles
+		.filter((role) => role.name !== "SUPER_ADMIN")
+		.map((role) => role.displayName);
 
 	return (
 		<div className="flex flex-wrap items-center gap-4 mb-6 p-4 border rounded-lg bg-card">

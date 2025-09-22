@@ -23,11 +23,13 @@ interface UserListTableProps {
 export function UserListTable({ users, onEditUser }: UserListTableProps) {
 	const { getRoleDisplayName } = useRoleStore();
 
-	const sortedUser = users.sort((a, b) => {
-		const roleCompare = a.role.name.localeCompare(b.role.name);
-		if (roleCompare !== 0) return roleCompare;
-		return a.lastName.localeCompare(b.lastName);
-	});
+	const sortedUser = users
+		.filter((user) => user.role.name !== "SUPER_ADMIN")
+		.sort((a, b) => {
+			const roleCompare = a.role.name.localeCompare(b.role.name);
+			if (roleCompare !== 0) return roleCompare;
+			return a.lastName.localeCompare(b.lastName);
+		});
 
 	return (
 		<div

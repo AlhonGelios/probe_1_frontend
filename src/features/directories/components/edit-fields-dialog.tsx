@@ -135,11 +135,25 @@ export function EditFieldsDialog({
 	return (
 		<Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
 			<DialogContent className="max-h-[90vh] min-w-[50vw] overflow-y-auto">
-				<DialogHeader>
-					<DialogTitle>Редактирование полей</DialogTitle>
+				<DialogHeader className="flex flex-row justify-between">
+					<DialogTitle className="py-2">
+						Редактирование полей
+					</DialogTitle>
+					<Button
+						variant="secondary"
+						onClick={() => {
+							setMode("create");
+							setSelectedField(null);
+							setEditedField(null);
+						}}
+						className="mr-8"
+						disabled={mode === "create"}
+					>
+						Создать новое поле
+					</Button>
 				</DialogHeader>
 				<div className="flex flex-row w-full gap-4 py-4 space-y-6">
-					<div className="grow w-1/6">
+					<div className="w-1/3 flex-shrink-0">
 						<h3 className="font-semibold mb-2">
 							Существующие поля
 						</h3>
@@ -147,7 +161,11 @@ export function EditFieldsDialog({
 							{fields.map((field) => (
 								<li
 									key={field.id}
-									className="flex items-center justify-between p-2 border rounded-md hover:bg-gray-100 hover:cursor-pointer"
+									className={`${
+										field.id === selectedField?.id
+											? "bg-orange-100"
+											: ""
+									} flex items-center justify-between p-2 border rounded-md hover:bg-gray-100 hover:cursor-pointer`}
 									onClick={() => handleSelectField(field)}
 								>
 									<div className="flex flex-col">
@@ -193,224 +211,225 @@ export function EditFieldsDialog({
 					<Separator orientation="vertical" />
 					{/* Условный рендеринг формы */}
 					{mode === "create" ? (
-						<div className="space-y-4 grow ">
-							<h3 className="font-semibold">
-								Добавить новое поле
-							</h3>
-							<div className="grid gap-2">
-								<Label htmlFor="new-field-displayName">
-									Отображаемое имя
-								</Label>
-								<Input
-									id="new-field-displayName"
-									value={newField.displayName}
-									onChange={(e) =>
-										setNewField({
-											...newField,
-											displayName: e.target.value,
-										})
-									}
-									placeholder="Например, 'Код региона'"
-								/>
+						<div className="flex flex-col space-y-4 flex-1">
+							<div className="space-y-4 flex-1">
+								<h3 className="font-semibold">
+									Добавить новое поле
+								</h3>
+								<div className="grid gap-2">
+									<Label htmlFor="new-field-displayName">
+										Отображаемое имя
+									</Label>
+									<Input
+										id="new-field-displayName"
+										value={newField.displayName}
+										onChange={(e) =>
+											setNewField({
+												...newField,
+												displayName: e.target.value,
+											})
+										}
+										placeholder="Например, 'Код региона'"
+									/>
+								</div>
+								<div className="grid gap-2">
+									<Label htmlFor="new-field-name">
+										Системное имя (латиницей)
+									</Label>
+									<Input
+										id="new-field-name"
+										value={newField.name}
+										onChange={(e) =>
+											setNewField({
+												...newField,
+												name: e.target.value,
+											})
+										}
+										placeholder="Например, 'region_code'"
+									/>
+								</div>
+								<div className="grid gap-2">
+									<Label htmlFor="new-field-type">
+										Тип поля
+									</Label>
+									<Select
+										value={newField.type}
+										onValueChange={(value) =>
+											setNewField({
+												...newField,
+												type: value as CreateFieldDto["type"],
+											})
+										}
+									>
+										<SelectTrigger id="new-field-type">
+											<SelectValue placeholder="Выберите тип" />
+										</SelectTrigger>
+										<SelectContent>
+											{FIELD_TYPES.map((type) => (
+												<SelectItem
+													key={type}
+													value={type}
+												>
+													{type}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</div>
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										id="is-required"
+										checked={newField.isRequired}
+										onCheckedChange={(checked) =>
+											setNewField({
+												...newField,
+												isRequired: !!checked,
+											})
+										}
+										disabled={newField.isUnique}
+									/>
+									<Label htmlFor="is-required">
+										Обязательное
+									</Label>
+								</div>
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										id="is-unique"
+										checked={newField.isUnique}
+										onCheckedChange={(checked) => {
+											const isUniqueChecked = !!checked;
+											setNewField({
+												...newField,
+												isUnique: isUniqueChecked,
+												isRequired: isUniqueChecked
+													? true
+													: newField.isRequired,
+											});
+										}}
+									/>
+									<Label htmlFor="is-unique">
+										Уникальное
+									</Label>
+								</div>
 							</div>
-							<div className="grid gap-2">
-								<Label htmlFor="new-field-name">
-									Системное имя (латиницей)
-								</Label>
-								<Input
-									id="new-field-name"
-									value={newField.name}
-									onChange={(e) =>
-										setNewField({
-											...newField,
-											name: e.target.value,
-										})
-									}
-									placeholder="Например, 'region_code'"
-								/>
-							</div>
-							<div className="grid gap-2">
-								<Label htmlFor="new-field-type">Тип поля</Label>
-								<Select
-									value={newField.type}
-									onValueChange={(value) =>
-										setNewField({
-											...newField,
-											type: value as CreateFieldDto["type"],
-										})
-									}
-								>
-									<SelectTrigger id="new-field-type">
-										<SelectValue placeholder="Выберите тип" />
-									</SelectTrigger>
-									<SelectContent>
-										{FIELD_TYPES.map((type) => (
-											<SelectItem key={type} value={type}>
-												{type}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</div>
-							<div className="flex items-center space-x-2">
-								<Checkbox
-									id="is-required"
-									checked={newField.isRequired}
-									onCheckedChange={(checked) =>
-										setNewField({
-											...newField,
-											isRequired: !!checked,
-										})
-									}
-									disabled={newField.isUnique}
-								/>
-								<Label htmlFor="is-required">
-									Обязательное
-								</Label>
-							</div>
-							<div className="flex items-center space-x-2">
-								<Checkbox
-									id="is-unique"
-									checked={newField.isUnique}
-									onCheckedChange={(checked) => {
-										const isUniqueChecked = !!checked;
-										setNewField({
-											...newField,
-											isUnique: isUniqueChecked,
-											isRequired: isUniqueChecked
-												? true
-												: newField.isRequired,
-										});
-									}}
-								/>
-								<Label htmlFor="is-unique">Уникальное</Label>
-							</div>
+
 							<Button onClick={handleCreate} className="w-full">
 								<Plus className="mr-2 h-4 w-4" />
 								Добавить поле
 							</Button>
 						</div>
 					) : (
-						<div className="space-y-4 grow ">
-							<h3 className="font-semibold">
-								Редактирование поля
-							</h3>
-							<p className="text-sm text-muted-foreground">
-								{`Редактирование поля: ${selectedField?.displayName}`}
-							</p>
-							<div className="grid gap-2">
-								<Label htmlFor="edit-field-displayName">
-									Отображаемое имя
-								</Label>
-								<Input
-									id="edit-field-displayName"
-									value={editedField?.displayName}
-									onChange={(e) =>
-										setEditedField({
-											...editedField!,
-											displayName: e.target.value,
-										})
-									}
-									placeholder="Например, 'Код региона'"
-								/>
+						<div className="flex flex-col space-y-4 flex-1">
+							<div className=" space-y-4 flex-1">
+								<h3 className="font-semibold">
+									{`Редактирование поля: ${selectedField?.displayName}`}
+								</h3>
+								<div className="grid gap-2">
+									<Label htmlFor="edit-field-displayName">
+										Отображаемое имя
+									</Label>
+									<Input
+										id="edit-field-displayName"
+										value={editedField?.displayName}
+										onChange={(e) =>
+											setEditedField({
+												...editedField!,
+												displayName: e.target.value,
+											})
+										}
+										placeholder="Например, 'Код региона'"
+									/>
+								</div>
+								<div className="grid gap-2">
+									<Label htmlFor="edit-field-name">
+										Системное имя (латиницей)
+									</Label>
+									<Input
+										id="edit-field-name"
+										value={editedField?.name}
+										onChange={(e) =>
+											setEditedField({
+												...editedField!,
+												name: e.target.value,
+											})
+										}
+										placeholder="Например, 'region_code'"
+										disabled // Системное имя нельзя изменять после создания
+									/>
+								</div>
+								<div className="grid gap-2">
+									<Label htmlFor="edit-field-type">
+										Тип поля
+									</Label>
+									<Select
+										value={editedField?.type}
+										onValueChange={(value) =>
+											setEditedField({
+												...editedField!,
+												type: value as CreateFieldDto["type"],
+											})
+										}
+										disabled // Тип поля нельзя изменять
+									>
+										<SelectTrigger id="edit-field-type">
+											<SelectValue placeholder="Выберите тип" />
+										</SelectTrigger>
+										<SelectContent>
+											{FIELD_TYPES.map((type) => (
+												<SelectItem
+													key={type}
+													value={type}
+												>
+													{type}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</div>
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										id="edit-is-required"
+										checked={editedField?.isRequired}
+										onCheckedChange={(checked) =>
+											setEditedField({
+												...editedField!,
+												isRequired: !!checked,
+											})
+										}
+										disabled={
+											editedField?.isUnique ||
+											isUniqueDisabled
+										}
+									/>
+									<Label htmlFor="edit-is-required">
+										Обязательное
+									</Label>
+								</div>
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										id="edit-is-unique"
+										checked={editedField?.isUnique}
+										onCheckedChange={(checked) => {
+											const isUniqueChecked = !!checked;
+											setEditedField({
+												...editedField!,
+												isUnique: isUniqueChecked,
+												isRequired: isUniqueChecked
+													? true
+													: !!editedField?.isRequired,
+											});
+										}}
+										disabled={isUniqueDisabled}
+									/>
+									<Label htmlFor="edit-is-unique">
+										Уникальное
+									</Label>
+								</div>
 							</div>
-							<div className="grid gap-2">
-								<Label htmlFor="edit-field-name">
-									Системное имя (латиницей)
-								</Label>
-								<Input
-									id="edit-field-name"
-									value={editedField?.name}
-									onChange={(e) =>
-										setEditedField({
-											...editedField!,
-											name: e.target.value,
-										})
-									}
-									placeholder="Например, 'region_code'"
-									disabled // Системное имя нельзя изменять после создания
-								/>
-							</div>
-							<div className="grid gap-2">
-								<Label htmlFor="edit-field-type">
-									Тип поля
-								</Label>
-								<Select
-									value={editedField?.type}
-									onValueChange={(value) =>
-										setEditedField({
-											...editedField!,
-											type: value as CreateFieldDto["type"],
-										})
-									}
-									disabled // Тип поля нельзя изменять
-								>
-									<SelectTrigger id="edit-field-type">
-										<SelectValue placeholder="Выберите тип" />
-									</SelectTrigger>
-									<SelectContent>
-										{FIELD_TYPES.map((type) => (
-											<SelectItem key={type} value={type}>
-												{type}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</div>
-							<div className="flex items-center space-x-2">
-								<Checkbox
-									id="edit-is-required"
-									checked={editedField?.isRequired}
-									onCheckedChange={(checked) =>
-										setEditedField({
-											...editedField!,
-											isRequired: !!checked,
-										})
-									}
-									disabled={
-										editedField?.isUnique ||
-										isUniqueDisabled
-									}
-								/>
-								<Label htmlFor="edit-is-required">
-									Обязательное
-								</Label>
-							</div>
-							<div className="flex items-center space-x-2">
-								<Checkbox
-									id="edit-is-unique"
-									checked={editedField?.isUnique}
-									onCheckedChange={(checked) => {
-										const isUniqueChecked = !!checked;
-										setEditedField({
-											...editedField!,
-											isUnique: isUniqueChecked,
-											isRequired: isUniqueChecked
-												? true
-												: !!editedField?.isRequired,
-										});
-									}}
-									disabled={isUniqueDisabled}
-								/>
-								<Label htmlFor="edit-is-unique">
-									Уникальное
-								</Label>
-							</div>
+
 							<Button onClick={handleUpdate} className="w-full">
 								<Pencil className="mr-2 h-4 w-4" />
 								Сохранить изменения
-							</Button>
-							<Button
-								variant="outline"
-								onClick={() => {
-									setMode("create");
-									setSelectedField(null);
-									setEditedField(null);
-								}}
-								className="w-full"
-							>
-								<Plus className="mr-2 h-4 w-4" />
-								Добавить новое поле
 							</Button>
 						</div>
 					)}
