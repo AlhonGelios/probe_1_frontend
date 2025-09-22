@@ -17,11 +17,15 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/shared/ui/select";
+import { Switch } from "@/shared/ui/switch";
 import { Plus, Trash2, Pencil } from "lucide-react"; // Добавил Pencil для редактирования
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { DirectoryField } from "../types";
+import { createField, deleteField, updateField } from "../api/dictionaries-api";
 import { Separator } from "@/shared/ui/separator";
+import { ToggleableInput } from "@/shared/ui/toggleable-input";
+import { SimpleDatePicker } from "@/shared/ui/simple-date-picker";
 
 const FIELD_TYPES = ["STRING", "NUMBER", "DATE", "BOOLEAN"] as const;
 
@@ -51,22 +55,17 @@ const initialNewFieldState: CreateFieldDto = {
 };
 
 interface EditFieldsDialogProps {
+	directoryId: string;
 	fields: DirectoryField[];
-	onFieldCreate: (newField: CreateFieldDto) => Promise<void>;
-	onFieldDelete: (fieldId: string) => Promise<void>;
-	onFieldUpdate: (
-		fieldId: string,
-		updatedField: UpdateFieldDto
-	) => Promise<void>; // Новое свойство для обновления
+	onRefetchFields: () => Promise<void>;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 }
 
 export function EditFieldsDialog({
+	directoryId,
 	fields,
-	onFieldCreate,
-	onFieldDelete,
-	onFieldUpdate,
+	onRefetchFields,
 	open,
 	onOpenChange,
 }: EditFieldsDialogProps) {
@@ -80,6 +79,10 @@ export function EditFieldsDialog({
 		useState<CreateFieldDto>(initialNewFieldState);
 	const [editedField, setEditedField] = useState<DirectoryField | null>(null);
 
+	// Состояние для управления чекбоксом значения по умолчанию
+	const [hasDefaultValue, setHasDefaultValue] = useState(false);
+	const [hasDefaultValueEdit, setHasDefaultValueEdit] = useState(false);
+
 	// Синхронизация с пропсом open
 	useEffect(() => {
 		setIsDialogOpen(open);
@@ -89,6 +92,8 @@ export function EditFieldsDialog({
 			setSelectedField(null);
 			setNewField(initialNewFieldState);
 			setEditedField(null);
+			setHasDefaultValue(false);
+			setHasDefaultValueEdit(false);
 		}
 	}, [open]);
 
@@ -97,6 +102,8 @@ export function EditFieldsDialog({
 		setMode("edit");
 		setSelectedField(field);
 		setEditedField(field); // Инициализация формы редактирования данными поля
+		// Установка состояния чекбокса на основе наличия значения по умолчанию
+		setHasDefaultValueEdit(!!field.defaultValue);
 	};
 
 	const handleDialogClose = (openState: boolean) => {
@@ -104,6 +111,8 @@ export function EditFieldsDialog({
 			setNewField(initialNewFieldState); // Сброс формы при закрытии
 			setMode("create"); // Сброс режима
 			setSelectedField(null);
+			setHasDefaultValue(false); // Сброс чекбокса
+			setHasDefaultValueEdit(false); // Сброс чекбокса редактирования
 			onOpenChange(false);
 		}
 		setIsDialogOpen(openState);
@@ -115,26 +124,219 @@ export function EditFieldsDialog({
 			return;
 		}
 
-		let defaultValue: string | undefined;
+		// Валидация значения по умолчанию, если оно указано
+		if (hasDefaultValue && newField.defaultValue) {
+			const validationError = validateDefaultValue(
+				newField.type,
+				newField.defaultValue
+			);
+			if (validationError) {
+				toast.error(
+					`Ошибка валидации значения по умолчанию: ${validationError}`
+				);
+				return;
+			}
+		}
 
-		await onFieldCreate({ ...newField, defaultValue });
-		setNewField(initialNewFieldState); // Сброс формы после создания
+		try {
+			// Установка значения по умолчанию в зависимости от состояния чекбокса
+			const finalDefaultValue = hasDefaultValue
+				? newField.defaultValue
+				: undefined;
+
+			const fieldData = {
+				name: newField.name,
+				displayName: newField.displayName,
+				type: newField.type,
+				isRequired: newField.isRequired,
+				isUnique: newField.isUnique,
+				defaultValue: finalDefaultValue,
+				isSystem: newField.isSystem,
+			};
+
+			await createField(directoryId || "", fieldData);
+			onRefetchFields();
+			toast.success("Поле успешно создано");
+
+			setNewField(initialNewFieldState); // Сброс формы после создания
+			setHasDefaultValue(false); // Сброс чекбокса
+		} catch (error) {
+			console.error("Error creating field:", error);
+			toast.error("Ошибка при создании поля");
+		}
 	};
 
 	const handleUpdate = async () => {
 		if (!editedField) return;
 
-		await onFieldUpdate(editedField.id, editedField);
-		setMode("create");
-		setSelectedField(null);
-		setEditedField(null);
+		// Валидация значения по умолчанию, если оно указано
+		if (hasDefaultValueEdit && editedField.defaultValue) {
+			const validationError = validateDefaultValue(
+				editedField.type,
+				editedField.defaultValue
+			);
+			if (validationError) {
+				toast.error(
+					`Ошибка валидации значения по умолчанию: ${validationError}`
+				);
+				return;
+			}
+		}
+
+		try {
+			// Обновляем defaultValue в зависимости от состояния чекбокса
+			const updatedField = {
+				...editedField,
+				defaultValue: hasDefaultValueEdit
+					? editedField.defaultValue
+					: undefined,
+			};
+
+			await updateField(
+				selectedField?.id || "",
+				editedField.id,
+				updatedField
+			);
+			onRefetchFields();
+			toast.success("Поле успешно обновлено");
+
+			setMode("create");
+			setSelectedField(null);
+			setEditedField(null);
+			setHasDefaultValueEdit(false);
+		} catch (error) {
+			console.error("Error updating field:", error);
+			toast.error("Ошибка при обновлении поля");
+		}
+	};
+
+	const handleDelete = async (fieldId: string) => {
+		try {
+			await deleteField(directoryId, fieldId);
+			onRefetchFields();
+			toast.success("Поле успешно удалено");
+		} catch (error) {
+			console.error("Error deleting field:", error);
+			const errorMessage =
+				error instanceof Error
+					? error.message
+					: "Произошла неизвестная ошибка";
+			toast.error(`Не удалось удалить поле: ${errorMessage}`);
+		}
 	};
 
 	const isUniqueDisabled = mode === "edit" && editedField?.isSystem;
 
+	// Функция валидации значения по умолчанию
+	const validateDefaultValue = (
+		fieldType: string,
+		value: string
+	): string | null => {
+		if (!value.trim()) {
+			return null; // Пустое значение валидно
+		}
+
+		switch (fieldType) {
+			case "STRING":
+				return null; // Любая строка валидна
+			case "NUMBER":
+				const numValue = Number(value);
+				if (isNaN(numValue)) {
+					return "Значение должно быть числом";
+				}
+				return null;
+			case "BOOLEAN":
+				if (!["true", "false"].includes(value.toLowerCase())) {
+					return "Значение должно быть true или false";
+				}
+				return null;
+			case "DATE":
+				const dateValue = new Date(value);
+				if (isNaN(dateValue.getTime())) {
+					return "Некорректная дата";
+				}
+				return null;
+			default:
+				return null;
+		}
+	};
+
+	// Функция для рендеринга поля ввода значения по умолчанию в зависимости от типа
+	const renderDefaultValueInput = (
+		fieldType: string,
+		value: string,
+		onChange: (value: string) => void,
+		disabled: boolean = false
+	) => {
+		if (
+			(!hasDefaultValue && mode === "create") ||
+			(!hasDefaultValueEdit && mode === "edit")
+		) {
+			return null;
+		}
+
+		switch (fieldType) {
+			case "STRING":
+				return (
+					<ToggleableInput
+						value={value}
+						onChange={onChange}
+						placeholder="Введите значение по умолчанию"
+						disabled={disabled}
+					/>
+				);
+			case "NUMBER":
+				return (
+					<Input
+						type="number"
+						value={value}
+						onChange={(e) => onChange(e.target.value)}
+						placeholder="Введите числовое значение по умолчанию"
+						disabled={disabled}
+					/>
+				);
+			case "BOOLEAN":
+				return (
+					<div className="flex items-center space-x-2">
+						<Switch
+							checked={value === "true"}
+							onCheckedChange={(checked) =>
+								onChange(checked ? "true" : "false")
+							}
+							disabled={disabled}
+						/>
+						<Label className="text-sm text-muted-foreground">
+							{value === "true" ? "Да" : "Нет"}
+						</Label>
+					</div>
+				);
+			case "DATE":
+				// Для даты нам нужно адаптировать SimpleDatePicker для работы со строковым значением
+				const dateValue = value ? new Date(value) : null;
+				return (
+					<SimpleDatePicker
+						value={dateValue}
+						onChange={(date) =>
+							onChange(date ? date.toISOString() : "")
+						}
+						placeholder="Выберите дату по умолчанию"
+					/>
+				);
+			default:
+				return (
+					<Input
+						value={value}
+						onChange={(e) => onChange(e.target.value)}
+						placeholder="Введите значение по умолчанию"
+						disabled={disabled}
+					/>
+				);
+		}
+	};
+
 	return (
 		<Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
-			<DialogContent className="max-h-[90vh] min-w-[50vw] overflow-y-auto">
+			<DialogContent className="max-h-[90vh] min-w-[50vw]">
 				<DialogHeader className="flex flex-row justify-between">
 					<DialogTitle className="py-2">
 						Редактирование полей
@@ -153,11 +355,11 @@ export function EditFieldsDialog({
 					</Button>
 				</DialogHeader>
 				<div className="flex flex-row w-full gap-4 py-4 space-y-6">
-					<div className="w-1/3 flex-shrink-0">
+					<div className="w-1/3 flex-shrink-0 h-[60vh] flex flex-col">
 						<h3 className="font-semibold mb-2">
 							Существующие поля
 						</h3>
-						<ul className="space-y-2 overflow-y-auto ">
+						<ul className="space-y-2 overflow-y-auto flex-1">
 							{fields.map((field) => (
 								<li
 									key={field.id}
@@ -165,7 +367,7 @@ export function EditFieldsDialog({
 										field.id === selectedField?.id
 											? "bg-orange-100"
 											: ""
-									} flex items-center justify-between p-2 border rounded-md hover:bg-gray-100 hover:cursor-pointer`}
+									} flex items-center justify-between p-2 border rounded-md hover:bg-gray-100 hover:cursor-pointer mr-4`}
 									onClick={() => handleSelectField(field)}
 								>
 									<div className="flex flex-col">
@@ -192,7 +394,7 @@ export function EditFieldsDialog({
 										size="icon"
 										onClick={(e) => {
 											e.stopPropagation(); // Останавливаем событие, чтобы не сработал onClick на li
-											onFieldDelete(field.id);
+											handleDelete(field.id);
 										}}
 										disabled={field.isSystem}
 										className="hover:bg-gray-300"
@@ -311,6 +513,43 @@ export function EditFieldsDialog({
 										Уникальное
 									</Label>
 								</div>
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										id="has-default-value"
+										checked={hasDefaultValue}
+										onCheckedChange={(checked) => {
+											const hasDefault = !!checked;
+											setHasDefaultValue(hasDefault);
+											// Очищаем значение по умолчанию при выключении чекбокса
+											if (!hasDefault) {
+												setNewField({
+													...newField,
+													defaultValue: undefined,
+												});
+											}
+										}}
+									/>
+									<Label htmlFor="has-default-value">
+										Значение по умолчанию
+									</Label>
+								</div>
+								{hasDefaultValue && (
+									<div className="grid gap-2">
+										<Label htmlFor="default-value">
+											Значение по умолчанию (
+											{newField.type})
+										</Label>
+										{renderDefaultValueInput(
+											newField.type,
+											newField.defaultValue || "",
+											(value) =>
+												setNewField({
+													...newField,
+													defaultValue: value,
+												})
+										)}
+									</div>
+								)}
 							</div>
 
 							<Button onClick={handleCreate} className="w-full">
@@ -425,6 +664,44 @@ export function EditFieldsDialog({
 										Уникальное
 									</Label>
 								</div>
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										id="edit-has-default-value"
+										checked={hasDefaultValueEdit}
+										onCheckedChange={(checked) => {
+											const hasDefault = !!checked;
+											setHasDefaultValueEdit(hasDefault);
+											// Очищаем значение по умолчанию при выключении чекбокса
+											if (!hasDefault) {
+												setEditedField({
+													...editedField!,
+													defaultValue: undefined,
+												});
+											}
+										}}
+									/>
+									<Label htmlFor="edit-has-default-value">
+										Значение по умолчанию
+									</Label>
+								</div>
+								{hasDefaultValueEdit && (
+									<div className="grid gap-2">
+										<Label htmlFor="edit-default-value">
+											Значение по умолчанию (
+											{editedField?.type})
+										</Label>
+										{renderDefaultValueInput(
+											editedField?.type || "STRING",
+											editedField?.defaultValue || "",
+											(value) =>
+												setEditedField({
+													...editedField!,
+													defaultValue: value,
+												}),
+											editedField?.isSystem || false
+										)}
+									</div>
+								)}
 							</div>
 
 							<Button onClick={handleUpdate} className="w-full">

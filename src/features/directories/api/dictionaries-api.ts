@@ -70,7 +70,15 @@ export const getDirectoryById = async (id: string): Promise<Directory> => {
 
 export const createField = async (
 	directoryId: string,
-	data: { name: string; type: string }
+	data: {
+		name: string;
+		displayName: string;
+		type: string;
+		isRequired?: boolean;
+		isUnique?: boolean;
+		defaultValue?: string;
+		isSystem: boolean;
+	}
 ) => {
 	const response = await fetch(
 		`${BACKEND_URL}/api/directories/${directoryId}/fields`,
@@ -93,12 +101,13 @@ export const createField = async (
 
 export const updateField = async (
 	directoryId: string,
+	fieldId: string,
 	data: UpdateFieldDto
 ) => {
 	const response = await fetch(
-		`${BACKEND_URL}/api/directories/${directoryId}/fields`,
+		`${BACKEND_URL}/api/directories/${directoryId}/fields/${fieldId}`,
 		{
-			method: "POST",
+			method: "PUT",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(data),
 			credentials: "include",
@@ -107,7 +116,7 @@ export const updateField = async (
 
 	if (!response.ok) {
 		const errorData = await response.json();
-		throw new Error(errorData.message || "Failed to create field.");
+		throw new Error(errorData.message || "Failed to update field.");
 	}
 
 	const result = await response.json();

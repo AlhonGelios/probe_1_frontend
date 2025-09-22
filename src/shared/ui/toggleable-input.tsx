@@ -61,7 +61,7 @@ export const ToggleableInput = (props: ToggleableInputProps) => {
 				<Textarea
 					value={value}
 					onChange={handleChange}
-					className="pr-10"
+					className="pr-10 max-h-40"
 					{...(rest as BaseTextareaProps)}
 				/>
 			) : (

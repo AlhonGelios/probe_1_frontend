@@ -2,12 +2,9 @@
 
 import { useCallback, useEffect, useState, useContext } from "react";
 import {
-	createField,
-	deleteField,
 	getDirectoryById,
 	deleteDirectory,
 	useGetDirectoryFields,
-	updateField,
 } from "../api/dictionaries-api";
 import { Directory } from "../types";
 import { Loader2, MoreVertical, SquarePen, Trash, Plus } from "lucide-react";
@@ -27,11 +24,7 @@ import {
 	DropdownMenuItem,
 } from "@/shared/ui/dropdown-menu";
 import { toast } from "sonner";
-import {
-	CreateFieldDto,
-	EditFieldsDialog,
-	UpdateFieldDto,
-} from "./edit-fields-dialog";
+import { EditFieldsDialog } from "./edit-fields-dialog";
 import { useRouter } from "next/navigation";
 import { DeleteDirectoryDialog } from "./delete-directory-dialog";
 import { DirectoriesContext } from "@/app/(core)/directories/layout";
@@ -81,57 +74,6 @@ export default function DirectoryContent({
 			fetchDirectory();
 		}
 	}, [directoryId, fetchDirectory]);
-
-	const handleCreateField = async (newField: CreateFieldDto) => {
-		if (!directory) return;
-		try {
-			await createField(directory.id, newField);
-			toast.success("Поле успешно создано");
-			refetchFields();
-		} catch (error) {
-			console.error("Error creating field:", error);
-			const errorMessage =
-				error instanceof Error
-					? error.message
-					: "Произошла неизвестная ошибка";
-			toast.error(`Не удалось создать поле: ${errorMessage}`);
-		}
-	};
-
-	const handleUpdateField = async (
-		fieldId: string,
-		updatedField: UpdateFieldDto
-	) => {
-		if (!directory) return;
-		try {
-			await updateField(directory.id, { ...updatedField, id: fieldId });
-			toast.success("Поле успешно обновлено");
-			refetchFields();
-		} catch (error) {
-			console.error("Error updating field:", error);
-			const errorMessage =
-				error instanceof Error
-					? error.message
-					: "Произошла неизвестная ошибка";
-			toast.error(`Не удалось обновить поле: ${errorMessage}`);
-		}
-	};
-
-	const handleDeleteField = async (fieldId: string) => {
-		if (!directory) return;
-		try {
-			await deleteField(directory.id, fieldId);
-			toast.success("Поле успешно удалено");
-			refetchFields(); // Вызываем повторный запрос полей
-		} catch (error) {
-			console.error("Error deleting field:", error);
-			const errorMessage =
-				error instanceof Error
-					? error.message
-					: "Произошла неизвестная ошибка";
-			toast.error(`Не удалось удалить поле: ${errorMessage}`);
-		}
-	};
 
 	const handleDeleteDirectory = async () => {
 		if (!directory) return;
@@ -216,12 +158,11 @@ export default function DirectoryContent({
 						</DropdownMenuContent>
 					</DropdownMenu>
 					<EditFieldsDialog
+						directoryId={directoryId}
 						open={isFieldsDialogOpen}
 						onOpenChange={setIsFieldsDialogOpen}
 						fields={fields}
-						onFieldCreate={handleCreateField}
-						onFieldDelete={handleDeleteField}
-						onFieldUpdate={handleUpdateField}
+						onRefetchFields={refetchFields}
 					/>
 					<DeleteDirectoryDialog
 						open={isDeleteDialogOpen}
