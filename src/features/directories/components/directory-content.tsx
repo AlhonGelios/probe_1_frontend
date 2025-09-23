@@ -6,7 +6,7 @@ import {
 	deleteDirectory,
 	useGetDirectoryFields,
 } from "../api/dictionaries-api";
-import { Directory } from "../types";
+import { Directory } from "../model/types";
 import { Loader2, MoreVertical, SquarePen, Trash, Plus } from "lucide-react";
 import {
 	Table,

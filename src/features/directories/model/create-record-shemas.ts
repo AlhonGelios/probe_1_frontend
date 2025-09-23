@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { DirectoryField, FieldType } from "../types";
+import { DirectoryField, FieldType } from "./types";
 
 const emptyToNull = (val: unknown) => {
 	if (typeof val === "string" && val.trim() === "") {

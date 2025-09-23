@@ -1,8 +1,5 @@
-import {
-	CreateFieldDto,
-	UpdateFieldDto,
-} from "../components/edit-fields-dialog";
-import { Directory, DirectoryField } from "../types";
+import { CreateFieldDto, UpdateFieldDto } from "../model/edit-fields-types";
+import { Directory, DirectoryField } from "../model/types";
 import { useState, useEffect, useCallback } from "react";
 
 const BACKEND_URL =

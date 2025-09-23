@@ -22,7 +22,7 @@ import {
 	FormLabel,
 	FormMessage,
 } from "@/shared/ui/form";
-import { DirectoryField } from "../types";
+import { DirectoryField } from "../model/types";
 import { makeFormSchema } from "../model/create-record-shemas";
 
 interface CreateRecordDialogProps<F extends readonly DirectoryField[]> {
