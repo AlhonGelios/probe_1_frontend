@@ -24,24 +24,8 @@ export function createChangedFields(
 	// Обрабатываем defaultValue с учетом чекбокса
 	const finalDefaultValue = hasDefaultValue ? updated.defaultValue : null;
 
-	console.log("[DEBUG] createChangedFields: Processing defaultValue", {
-		hasDefaultValue,
-		updatedDefaultValue: updated.defaultValue,
-		originalDefaultValue: original.defaultValue,
-		finalDefaultValue,
-		finalDefaultValueType: typeof finalDefaultValue,
-		willChange: finalDefaultValue !== original.defaultValue,
-	});
-
 	if (finalDefaultValue !== original.defaultValue) {
 		changedFields.defaultValue = finalDefaultValue;
-		console.log(
-			"[DEBUG] createChangedFields: Adding defaultValue to changedFields",
-			{
-				finalDefaultValue,
-				originalDefaultValue: original.defaultValue,
-			}
-		);
 	}
 
 	return changedFields;

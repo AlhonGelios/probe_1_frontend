@@ -97,6 +97,7 @@ export function EditFieldsDialog({
 							}
 							onSubmit={handlers.handleUpdate}
 							isUniqueDisabled={isUniqueDisabled}
+							directoryId={directoryId}
 						/>
 					)}
 				</div>

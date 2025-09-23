@@ -1,5 +1,6 @@
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
+import { Switch } from "@/shared/ui/switch";
 import { ToggleableInput } from "@/shared/ui/toggleable-input";
 import { SimpleDatePicker } from "@/shared/ui/simple-date-picker";
 import React from "react";
@@ -41,11 +42,10 @@ export function renderDefaultValueInput(
 		case "BOOLEAN":
 			return (
 				<div className="flex items-center space-x-2">
-					<input
-						type="checkbox"
+					<Switch
 						checked={value === "true"}
-						onChange={(e) =>
-							onChange(e.target.checked ? "true" : "false")
+						onCheckedChange={(checked) =>
+							onChange(checked ? "true" : "false")
 						}
 						disabled={disabled}
 					/>

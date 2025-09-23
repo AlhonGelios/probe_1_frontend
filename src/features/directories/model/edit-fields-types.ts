@@ -20,6 +20,16 @@ export type UpdateFieldDto = {
 	defaultValue?: string | null;
 };
 
+export interface FieldStats {
+	fieldValuesCount: number;
+	hasRelatedRecords: boolean;
+	hasDefaultValue: boolean;
+}
+
+export interface FieldWithStats extends DirectoryField {
+	stats?: FieldStats;
+}
+
 export interface EditFieldsDialogProps {
 	directoryId: string;
 	fields: DirectoryField[];

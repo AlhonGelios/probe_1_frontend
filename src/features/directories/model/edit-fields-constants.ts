@@ -1,7 +1,3 @@
-/**
- * Константы для компонента edit-fields-dialog
- */
-
 // Типы полей, доступные для создания
 export const FIELD_TYPES = ["STRING", "NUMBER", "DATE", "BOOLEAN"] as const;
 

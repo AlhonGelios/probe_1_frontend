@@ -11,11 +11,17 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/shared/ui/select";
-import { Pencil, TriangleAlert } from "lucide-react";
-import { CreateFieldDto, DirectoryField } from "../../model/edit-fields-types";
+import { Pencil, TriangleAlert, Info } from "lucide-react";
+import {
+	CreateFieldDto,
+	DirectoryField,
+	FieldStats,
+} from "../../model/edit-fields-types";
 import { FIELD_TYPES } from "../../model/edit-fields-constants";
 import { renderDefaultValueInput } from "../../lib/hooks/use-edit-fields-utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
+import { getFieldStats } from "../../api/dictionaries-api";
+import { useState, useEffect, useCallback } from "react";
 
 interface EditFieldFormProps {
 	editedField: DirectoryField | null;
@@ -24,6 +30,7 @@ interface EditFieldFormProps {
 	setHasDefaultValueEdit: (hasDefault: boolean) => void;
 	onSubmit: () => void;
 	isUniqueDisabled: boolean;
+	directoryId: string;
 }
 
 export function EditFieldForm({
@@ -33,18 +40,63 @@ export function EditFieldForm({
 	setHasDefaultValueEdit,
 	onSubmit,
 	isUniqueDisabled,
+	directoryId,
 }: EditFieldFormProps) {
+	const [fieldStats, setFieldStats] = useState<FieldStats | null>(null);
+	const [isLoadingStats, setIsLoadingStats] = useState(false);
+
+	// Функция для загрузки статистики поля с мемоизацией
+	const loadFieldStats = useCallback(async () => {
+		if (!editedField?.id) {
+			setFieldStats(null);
+			return;
+		}
+
+		setIsLoadingStats(true);
+		try {
+			const stats = await getFieldStats(directoryId, editedField.id);
+			setFieldStats(stats);
+		} catch (error) {
+			console.error("Error fetching field stats:", error);
+			setFieldStats(null);
+		} finally {
+			setIsLoadingStats(false);
+		}
+	}, [directoryId, editedField?.id]);
+
+	// Загружаем статистику поля только при изменении directoryId
+	useEffect(() => {
+		loadFieldStats();
+	}, [loadFieldStats]);
+
 	if (!editedField) {
 		return null;
 	}
+
+	// Определяем, должно ли поле типа быть отключено
+	const isTypeDisabled = Boolean(
+		fieldStats &&
+			(fieldStats.hasRelatedRecords || fieldStats.hasDefaultValue)
+	);
+	const typeDisabledReason =
+		fieldStats && fieldStats.hasRelatedRecords && fieldStats.hasDefaultValue
+			? "Поле имеет связанные записи и значение по умолчанию"
+			: fieldStats?.hasRelatedRecords
+			? "Поле имеет связанные записи"
+			: fieldStats?.hasDefaultValue
+			? "Поле имеет значение по умолчанию"
+			: null;
 
 	// Используем общую функцию для рендеринга полей ввода
 
 	return (
 		<div className="flex flex-col space-y-4 flex-1">
 			<div className=" space-y-4 flex-1">
-				<h3 className="font-semibold">
-					{`Редактирование поля: ${editedField.displayName}`}
+				<h3 className="flex justify-between font-semibold">
+					{`Редактирование поля: ${editedField.displayName}`}{" "}
+					{isLoadingStats && (
+						<div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900" />
+					)}
 				</h3>
 				<div className="grid gap-2">
 					<Label htmlFor="edit-field-displayName">
@@ -98,27 +150,61 @@ export function EditFieldForm({
 					</div>
 				</div>
 				<div className="grid gap-2">
-					<Label htmlFor="edit-field-type">Тип поля</Label>
-					<Select
-						value={editedField.type}
-						onValueChange={(value) =>
-							setEditedField({
-								...editedField,
-								type: value as CreateFieldDto["type"],
-							})
-						}
-					>
-						<SelectTrigger id="edit-field-type">
-							<SelectValue placeholder="Выберите тип" />
-						</SelectTrigger>
-						<SelectContent>
-							{FIELD_TYPES.map((type) => (
-								<SelectItem key={type} value={type}>
-									{type}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
+					<div className="flex items-center gap-2">
+						<Label htmlFor="edit-field-type">Тип поля</Label>
+					</div>
+					<div className="relative">
+						<Select
+							value={editedField.type}
+							onValueChange={(value) =>
+								setEditedField({
+									...editedField,
+									type: value as CreateFieldDto["type"],
+								})
+							}
+							disabled={isTypeDisabled}
+						>
+							<SelectTrigger
+								id="edit-field-type"
+								className={
+									isTypeDisabled
+										? "bg-gray-100 text-gray-500 cursor-not-allowed"
+										: ""
+								}
+							>
+								<SelectValue placeholder="Выберите тип" />
+							</SelectTrigger>
+							<SelectContent>
+								{FIELD_TYPES.map((type) => (
+									<SelectItem key={type} value={type}>
+										{type}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+						{isTypeDisabled && (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Info className="absolute right-2 top-1/2 -translate-y-1/2 text-blue-500 w-4 h-4" />
+								</TooltipTrigger>
+								<TooltipContent className="max-w-70">
+									<p>{typeDisabledReason}</p>
+									{fieldStats?.hasRelatedRecords && (
+										<p className="text-sm text-gray-600 mt-1">
+											Количество связанных записей:{" "}
+											{fieldStats.fieldValuesCount}
+										</p>
+									)}
+									{fieldStats?.hasDefaultValue && (
+										<p className="text-sm text-gray-600 mt-1">
+											Значение по умолчанию: &quot;
+											{editedField.defaultValue}&quot;
+										</p>
+									)}
+								</TooltipContent>
+							</Tooltip>
+						)}
+					</div>
 				</div>
 				<div className="flex items-center space-x-2">
 					<Checkbox
@@ -158,25 +244,9 @@ export function EditFieldForm({
 						checked={hasDefaultValueEdit}
 						onCheckedChange={(checked) => {
 							const hasDefault = !!checked;
-							console.log(
-								"[DEBUG] EditFieldForm: Checkbox changed",
-								{
-									checked,
-									hasDefault,
-									currentDefaultValue:
-										editedField.defaultValue,
-									fieldId: editedField.id,
-								}
-							);
+
 							setHasDefaultValueEdit(hasDefault);
 							if (!hasDefault) {
-								console.log(
-									"[DEBUG] EditFieldForm: Setting defaultValue to null",
-									{
-										fieldId: editedField.id,
-										fieldName: editedField.name,
-									}
-								);
 								setEditedField({
 									...editedField,
 									defaultValue: null,

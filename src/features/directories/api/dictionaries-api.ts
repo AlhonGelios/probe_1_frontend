@@ -1,4 +1,8 @@
-import { CreateFieldDto, UpdateFieldDto } from "../model/edit-fields-types";
+import {
+	CreateFieldDto,
+	UpdateFieldDto,
+	FieldStats,
+} from "../model/edit-fields-types";
 import { Directory, DirectoryField } from "../model/types";
 import { useState, useEffect, useCallback } from "react";
 
@@ -96,14 +100,6 @@ export const updateField = async (
 	fieldId: string,
 	data: UpdateFieldDto
 ) => {
-	console.log("[DEBUG] updateField API: Sending data to backend", {
-		directoryId,
-		fieldId,
-		data,
-		defaultValue: data.defaultValue,
-		defaultValueType: typeof data.defaultValue,
-	});
-
 	const response = await fetch(
 		`${BACKEND_URL}/api/directories/${directoryId}/fields/${fieldId}`,
 		{
@@ -120,11 +116,7 @@ export const updateField = async (
 	}
 
 	const result = await response.json();
-	console.log("[DEBUG] updateField API: Received response", {
-		result,
-		defaultValue: result.defaultValue,
-		defaultValueType: typeof result.defaultValue,
-	});
+
 	return result;
 };
 
@@ -189,4 +181,29 @@ export const deleteDirectory = async (directoryId: string) => {
 	}
 
 	return;
+};
+
+export const getFieldStats = async (
+	directoryId: string,
+	fieldId: string
+): Promise<FieldStats> => {
+	const response = await fetch(
+		`${BACKEND_URL}/api/directories/${directoryId}/fields/${fieldId}/stats`,
+		{
+			method: "GET",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			credentials: "include",
+			cache: "no-store",
+		}
+	);
+
+	if (!response.ok) {
+		const errorData = await response.json();
+		throw new Error(errorData.message || "Failed to fetch field stats.");
+	}
+
+	const result = await response.json();
+	return result.stats;
 };
