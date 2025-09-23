@@ -17,7 +17,7 @@ export type UpdateFieldDto = {
 	type?: (typeof FIELD_TYPES)[number];
 	isRequired?: boolean;
 	isUnique?: boolean;
-	defaultValue?: string;
+	defaultValue?: string | null;
 };
 
 export interface EditFieldsDialogProps {

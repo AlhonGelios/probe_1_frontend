@@ -96,6 +96,14 @@ export const updateField = async (
 	fieldId: string,
 	data: UpdateFieldDto
 ) => {
+	console.log("[DEBUG] updateField API: Sending data to backend", {
+		directoryId,
+		fieldId,
+		data,
+		defaultValue: data.defaultValue,
+		defaultValueType: typeof data.defaultValue,
+	});
+
 	const response = await fetch(
 		`${BACKEND_URL}/api/directories/${directoryId}/fields/${fieldId}`,
 		{
@@ -112,6 +120,11 @@ export const updateField = async (
 	}
 
 	const result = await response.json();
+	console.log("[DEBUG] updateField API: Received response", {
+		result,
+		defaultValue: result.defaultValue,
+		defaultValueType: typeof result.defaultValue,
+	});
 	return result;
 };
 

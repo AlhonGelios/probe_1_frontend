@@ -25,7 +25,7 @@ export interface DirectoryField {
 	isSystem: boolean;
 	isRequired: boolean;
 	isUnique: boolean;
-	defaultValue?: string;
+	defaultValue?: string | null;
 }
 
 export interface DirectoryRecord {

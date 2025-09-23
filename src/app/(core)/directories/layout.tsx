@@ -4,7 +4,7 @@ import React, { useState, createContext } from "react";
 import { Button } from "@/shared/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import DictAsidePanel from "@/features/directories/components/aside-panel-directories";
-import { Directory } from "@/features/directories/types";
+import { Directory } from "@/features/directories/model/types";
 
 // Создаем контекст для передачи setDictList
 export const DirectoriesContext = createContext<{

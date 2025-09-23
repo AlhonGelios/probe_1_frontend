@@ -167,11 +167,23 @@ export function useEditFieldsHandlers(
 		}
 
 		try {
+			console.log("[DEBUG] handleUpdate: Creating changed fields", {
+				selectedFieldDefaultValue: selectedField.defaultValue,
+				editedFieldDefaultValue: editedField.defaultValue,
+				hasDefaultValueEdit,
+				editedFieldId: editedField.id,
+			});
+
 			const updatedField = createChangedFields(
 				selectedField,
 				editedField,
 				hasDefaultValueEdit
 			);
+
+			console.log("[DEBUG] handleUpdate: Changed fields result", {
+				updatedField,
+				changesCount: Object.keys(updatedField).length,
+			});
 
 			// Проверяем, есть ли изменения
 			if (Object.keys(updatedField).length === 0) {

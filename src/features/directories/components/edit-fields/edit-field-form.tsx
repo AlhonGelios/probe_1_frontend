@@ -158,11 +158,28 @@ export function EditFieldForm({
 						checked={hasDefaultValueEdit}
 						onCheckedChange={(checked) => {
 							const hasDefault = !!checked;
+							console.log(
+								"[DEBUG] EditFieldForm: Checkbox changed",
+								{
+									checked,
+									hasDefault,
+									currentDefaultValue:
+										editedField.defaultValue,
+									fieldId: editedField.id,
+								}
+							);
 							setHasDefaultValueEdit(hasDefault);
 							if (!hasDefault) {
+								console.log(
+									"[DEBUG] EditFieldForm: Setting defaultValue to null",
+									{
+										fieldId: editedField.id,
+										fieldName: editedField.name,
+									}
+								);
 								setEditedField({
 									...editedField,
-									defaultValue: undefined,
+									defaultValue: null,
 								});
 							}
 						}}
