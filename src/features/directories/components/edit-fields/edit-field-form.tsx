@@ -74,18 +74,22 @@ export function EditFieldForm({
 	}
 
 	// Определяем, должно ли поле типа быть отключено
-	const isTypeDisabled = Boolean(
-		fieldStats &&
-			(fieldStats.hasRelatedRecords || fieldStats.hasDefaultValue)
-	);
-	const typeDisabledReason =
-		fieldStats && fieldStats.hasRelatedRecords && fieldStats.hasDefaultValue
-			? "Поле имеет связанные записи и значение по умолчанию"
-			: fieldStats?.hasRelatedRecords
-			? "Поле имеет связанные записи"
-			: fieldStats?.hasDefaultValue
-			? "Поле имеет значение по умолчанию"
-			: null;
+	const isTypeDisabled =
+		Boolean(
+			fieldStats &&
+				(fieldStats.hasRelatedRecords || fieldStats.hasDefaultValue)
+		) || hasDefaultValueEdit;
+	const typeDisabledReason = hasDefaultValueEdit
+		? "Включена галка 'Значение по умолчанию'"
+		: fieldStats &&
+		  fieldStats.hasRelatedRecords &&
+		  fieldStats.hasDefaultValue
+		? "Поле имеет связанные записи и значение по умолчанию"
+		: fieldStats?.hasRelatedRecords
+		? "Поле имеет связанные записи"
+		: fieldStats?.hasDefaultValue
+		? "Поле имеет значение по умолчанию"
+		: null;
 
 	// Используем общую функцию для рендеринга полей ввода
 
@@ -153,7 +157,7 @@ export function EditFieldForm({
 					<div className="flex items-center gap-2">
 						<Label htmlFor="edit-field-type">Тип поля</Label>
 					</div>
-					<div className="relative">
+					<div className="flex gap-2 items-center">
 						<Select
 							value={editedField.type}
 							onValueChange={(value) =>
@@ -185,7 +189,7 @@ export function EditFieldForm({
 						{isTypeDisabled && (
 							<Tooltip>
 								<TooltipTrigger asChild>
-									<Info className="absolute right-2 top-1/2 -translate-y-1/2 text-blue-500 w-4 h-4" />
+									<Info className="text-blue-500 w-4 h-4" />
 								</TooltipTrigger>
 								<TooltipContent className="max-w-70">
 									<p>{typeDisabledReason}</p>
