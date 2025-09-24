@@ -191,14 +191,20 @@ export function useEditFieldsHandlers(
 				return;
 			}
 
-			await updateField(directoryId, editedField.id, updatedField);
+			// Получаем обновленное поле с сервера
+			const serverUpdatedField = await updateField(
+				directoryId,
+				editedField.id,
+				updatedField
+			);
 			await onRefetchFields();
 			toast.success("Поле успешно обновлено");
 
-			setMode("create");
-			setSelectedField(null);
-			setEditedField(null);
-			setHasDefaultValueEdit(false);
+			// Обновляем состояние с данными с сервера, сохраняя фокус
+			setSelectedField(serverUpdatedField);
+			setEditedField(serverUpdatedField);
+			// Обновляем hasDefaultValueEdit на основе нового значения defaultValue
+			setHasDefaultValueEdit(!!serverUpdatedField.defaultValue);
 		} catch (error) {
 			console.error("Error updating field:", error);
 			toast.error("Ошибка при обновлении поля");
@@ -209,7 +215,6 @@ export function useEditFieldsHandlers(
 		hasDefaultValueEdit,
 		directoryId,
 		onRefetchFields,
-		setMode,
 		setSelectedField,
 		setEditedField,
 		setHasDefaultValueEdit,
