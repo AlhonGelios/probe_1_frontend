@@ -89,22 +89,11 @@ export function useEditFieldsHandlers(
 	const handleDialogClose = useCallback(
 		(openState: boolean) => {
 			if (!openState) {
-				setNewField(initialNewFieldState); // Сброс формы при закрытии
-				setMode("create"); // Сброс режима
-				setSelectedField(null);
-				setHasDefaultValue(false); // Сброс чекбокса
-				setHasDefaultValueEdit(false); // Сброс чекбокса редактирования
+				// Просто закрываем диалог - сброс состояния происходит автоматически в хуке состояния
 				onOpenChange(false);
 			}
 		},
-		[
-			setNewField,
-			setMode,
-			setSelectedField,
-			setHasDefaultValue,
-			setHasDefaultValueEdit,
-			onOpenChange,
-		]
+		[onOpenChange]
 	);
 
 	const handleCreate = useCallback(async () => {
@@ -177,23 +166,11 @@ export function useEditFieldsHandlers(
 		}
 
 		try {
-			console.log("[DEBUG] handleUpdate: Creating changed fields", {
-				selectedFieldDefaultValue: selectedField.defaultValue,
-				editedFieldDefaultValue: editedField.defaultValue,
-				hasDefaultValueEdit,
-				editedFieldId: editedField.id,
-			});
-
 			const updatedField = createChangedFields(
 				selectedField,
 				editedField,
 				hasDefaultValueEdit
 			);
-
-			console.log("[DEBUG] handleUpdate: Changed fields result", {
-				updatedField,
-				changesCount: Object.keys(updatedField).length,
-			});
 
 			// Проверяем, есть ли изменения
 			if (Object.keys(updatedField).length === 0) {
@@ -235,6 +212,12 @@ export function useEditFieldsHandlers(
 			try {
 				await deleteField(directoryId, fieldId);
 				await onRefetchFields();
+
+				// Проверяем текущее значение режима и меняем на 'create' если было 'edit'
+				if (state.mode === "edit") {
+					setMode("create");
+				}
+
 				toast.success("Поле успешно удалено");
 			} catch (error) {
 				console.error("Error deleting field:", error);
@@ -245,7 +228,7 @@ export function useEditFieldsHandlers(
 				toast.error(`Не удалось удалить поле: ${errorMessage}`);
 			}
 		},
-		[directoryId, onRefetchFields]
+		[directoryId, onRefetchFields, state.mode, setMode]
 	);
 
 	return {

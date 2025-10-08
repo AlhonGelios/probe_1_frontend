@@ -55,7 +55,7 @@ export function useEditFieldsState({
 	// Синхронизация с пропсом open
 	useEffect(() => {
 		setIsDialogOpen(open);
-		// Сброс состояния при открытии/закрытии
+		// Сброс состояния только при закрытии диалога извне
 		if (!open) {
 			resetState();
 		}
