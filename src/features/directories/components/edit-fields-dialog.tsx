@@ -42,6 +42,7 @@ export function EditFieldsDialog({
 			setEditedField: state.setEditedField,
 			setHasDefaultValue: state.setHasDefaultValue,
 			setHasDefaultValueEdit: state.setHasDefaultValueEdit,
+			setOriginalDisplayName: state.setOriginalDisplayName,
 		}
 	);
 
@@ -94,6 +95,10 @@ export function EditFieldsDialog({
 							setEditedField={state.setEditedField}
 							setHasDefaultValueEdit={
 								state.setHasDefaultValueEdit
+							}
+							originalDisplayName={state.originalDisplayName}
+							setOriginalDisplayName={
+								state.setOriginalDisplayName
 							}
 							onSubmit={handlers.handleUpdate}
 							isUniqueDisabled={isUniqueDisabled}

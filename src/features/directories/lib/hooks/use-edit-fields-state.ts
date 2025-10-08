@@ -20,6 +20,10 @@ export interface UseEditFieldsStateReturn {
 	hasDefaultValue: boolean;
 	hasDefaultValueEdit: boolean;
 
+	// Состояние original display name для редактируемого поля
+	originalDisplayName: string;
+	setOriginalDisplayName: (name: string) => void;
+
 	// Действия
 	setIsDialogOpen: (open: boolean) => void;
 	setMode: (mode: "create" | "edit") => void;
@@ -46,6 +50,7 @@ export function useEditFieldsState({
 	const [editedField, setEditedField] = useState<DirectoryField | null>(null);
 	const [hasDefaultValue, setHasDefaultValue] = useState(false);
 	const [hasDefaultValueEdit, setHasDefaultValueEdit] = useState(false);
+	const [originalDisplayName, setOriginalDisplayName] = useState<string>("");
 
 	// Синхронизация с пропсом open
 	useEffect(() => {
@@ -64,6 +69,7 @@ export function useEditFieldsState({
 		setEditedField(null);
 		setHasDefaultValue(false);
 		setHasDefaultValueEdit(false);
+		setOriginalDisplayName("");
 	};
 
 	return {
@@ -79,6 +85,10 @@ export function useEditFieldsState({
 		// Состояние чекбоксов
 		hasDefaultValue,
 		hasDefaultValueEdit,
+
+		// Состояние original display name
+		originalDisplayName,
+		setOriginalDisplayName,
 
 		// Действия
 		setIsDialogOpen,

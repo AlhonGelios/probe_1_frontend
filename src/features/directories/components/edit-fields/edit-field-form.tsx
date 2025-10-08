@@ -28,6 +28,8 @@ interface EditFieldFormProps {
 	hasDefaultValueEdit: boolean;
 	setEditedField: (field: DirectoryField | null) => void;
 	setHasDefaultValueEdit: (hasDefault: boolean) => void;
+	originalDisplayName: string;
+	setOriginalDisplayName: (name: string) => void;
 	onSubmit: () => void;
 	isUniqueDisabled: boolean;
 	directoryId: string;
@@ -38,12 +40,29 @@ export function EditFieldForm({
 	hasDefaultValueEdit,
 	setEditedField,
 	setHasDefaultValueEdit,
+	originalDisplayName,
+	setOriginalDisplayName,
 	onSubmit,
 	isUniqueDisabled,
 	directoryId,
 }: EditFieldFormProps) {
 	const [fieldStats, setFieldStats] = useState<FieldStats | null>(null);
 	const [isLoadingStats, setIsLoadingStats] = useState(false);
+
+	// Функция-обертка для onSubmit
+	const handleSubmit = useCallback(async () => {
+		try {
+			onSubmit();
+			// Обновляем originalDisplayName после успешного сохранения
+			if (editedField) {
+				setOriginalDisplayName(editedField.displayName);
+			}
+		} catch (error) {
+			// Если произошла ошибка, не обновляем originalDisplayName
+			console.error("Error during save:", error);
+			throw error;
+		}
+	}, [onSubmit, editedField, setOriginalDisplayName]);
 
 	// Функция для загрузки статистики поля с мемоизацией
 	const loadFieldStats = useCallback(async () => {
@@ -68,6 +87,8 @@ export function EditFieldForm({
 	useEffect(() => {
 		loadFieldStats();
 	}, [loadFieldStats]);
+
+	// originalDisplayName теперь управляется извне через пропсы
 
 	if (!editedField) {
 		return null;
@@ -97,7 +118,7 @@ export function EditFieldForm({
 		<div className="flex flex-col space-y-4 flex-1">
 			<div className=" space-y-4 flex-1">
 				<h3 className="flex justify-between font-semibold">
-					{`Редактирование поля: ${editedField.displayName}`}{" "}
+					{`Редактирование поля: ${originalDisplayName}`}{" "}
 					{isLoadingStats && (
 						<div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900" />
 					)}
@@ -281,7 +302,7 @@ export function EditFieldForm({
 				)}
 			</div>
 
-			<Button onClick={onSubmit} className="w-full">
+			<Button onClick={handleSubmit} className="w-full">
 				<Pencil className="mr-2 h-4 w-4" />
 				Сохранить изменения
 			</Button>

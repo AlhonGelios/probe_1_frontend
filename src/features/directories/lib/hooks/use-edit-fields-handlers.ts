@@ -32,6 +32,7 @@ export interface UseEditFieldsHandlersActions {
 	setEditedField: (field: DirectoryField | null) => void;
 	setHasDefaultValue: (hasDefault: boolean) => void;
 	setHasDefaultValueEdit: (hasDefault: boolean) => void;
+	setOriginalDisplayName: (name: string) => void;
 }
 
 export interface UseEditFieldsHandlersReturn {
@@ -62,6 +63,7 @@ export function useEditFieldsHandlers(
 		setEditedField,
 		setHasDefaultValue,
 		setHasDefaultValueEdit,
+		setOriginalDisplayName,
 	} = actions;
 
 	// Обработчик выбора поля для редактирования
@@ -72,8 +74,16 @@ export function useEditFieldsHandlers(
 			setEditedField(field); // Инициализация формы редактирования данными поля
 			// Установка состояния чекбокса на основе наличия значения по умолчанию
 			setHasDefaultValueEdit(!!field.defaultValue);
+			// Установка original display name
+			setOriginalDisplayName(field.displayName);
 		},
-		[setMode, setSelectedField, setEditedField, setHasDefaultValueEdit]
+		[
+			setMode,
+			setSelectedField,
+			setEditedField,
+			setHasDefaultValueEdit,
+			setOriginalDisplayName,
+		]
 	);
 
 	const handleDialogClose = useCallback(
