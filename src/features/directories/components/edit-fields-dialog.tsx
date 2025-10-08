@@ -4,6 +4,7 @@ import { Button } from "@/shared/ui/button";
 import {
 	Dialog,
 	DialogContent,
+	DialogDescription,
 	DialogHeader,
 	DialogTitle,
 } from "@/shared/ui/dialog";
@@ -55,6 +56,7 @@ export function EditFieldsDialog({
 			onOpenChange={handlers.handleDialogClose}
 		>
 			<DialogContent className="max-h-[90vh] min-w-[50vw]">
+				<DialogDescription />
 				<DialogHeader className="flex flex-row justify-between">
 					<DialogTitle className="py-2">
 						Редактирование полей
