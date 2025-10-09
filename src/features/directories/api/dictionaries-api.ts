@@ -188,13 +188,6 @@ export const reorderFields = async (
 	directoryId: string,
 	fields: ReorderFieldsDto[]
 ) => {
-	// Логируем данные для диагностики
-	console.log("[DictionariesAPI] Reorder request:", {
-		directoryId,
-		fieldsCount: fields.length,
-		fields: fields.map((f) => ({ id: f.id, sortOrder: f.sortOrder })),
-	});
-
 	// Валидация данных перед отправкой
 	if (!fields || !Array.isArray(fields)) {
 		throw new Error("Invalid fields data: fields must be an array");
@@ -215,8 +208,6 @@ export const reorderFields = async (
 
 	const requestBody = { fields };
 
-	console.log("[DictionariesAPI] Request body:", requestBody);
-
 	const response = await fetch(
 		`${BACKEND_URL}/api/directories/${directoryId}/fields/reorder`,
 		{
@@ -229,7 +220,6 @@ export const reorderFields = async (
 
 	if (!response.ok) {
 		const errorData = await response.json();
-		console.error("[DictionariesAPI] Reorder failed:", errorData);
 		throw new Error(errorData.message || "Failed to reorder fields.");
 	}
 

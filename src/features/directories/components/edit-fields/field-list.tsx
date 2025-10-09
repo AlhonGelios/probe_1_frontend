@@ -9,6 +9,53 @@ import {
 import { reorderFields } from "../../api/dictionaries-api";
 import { useState, useCallback } from "react";
 
+// Функция валидации данных перед переупорядочиванием
+function validateReorderData(
+	fields: DirectoryField[],
+	directoryId: string
+): string | null {
+	// Проверяем что массив полей не пустой
+	if (!fields || fields.length === 0) {
+		return "Массив полей пуст";
+	}
+
+	// Проверяем что directoryId корректный
+	if (!directoryId || typeof directoryId !== "string") {
+		return "Некорректный ID справочника";
+	}
+
+	// Проверяем что все поля имеют корректные ID
+	const invalidFields = fields.filter(
+		(field) => !field.id || typeof field.id !== "string"
+	);
+	if (invalidFields.length > 0) {
+		return `Найдены поля с некорректными ID: ${invalidFields
+			.map((f) => f.displayName || f.name)
+			.join(", ")}`;
+	}
+
+	// Проверяем на дублирование ID
+	const ids = fields.map((field) => field.id);
+	const uniqueIds = new Set(ids);
+	if (uniqueIds.size !== ids.length) {
+		return "Обнаружены дублирующиеся ID полей";
+	}
+
+	// Проверяем что все поля принадлежат одному справочнику
+	const fieldDirectories = new Set(fields.map((field) => field.directoryId));
+	if (fieldDirectories.size > 1) {
+		return "Поля принадлежат разным справочникам";
+	}
+
+	// Проверяем что поля принадлежат текущему справочнику
+	const currentDirectoryId = fields[0]?.directoryId;
+	if (currentDirectoryId !== directoryId) {
+		return `Поля не принадлежат справочнику ${directoryId}`;
+	}
+
+	return null; // Валидация прошла успешно
+}
+
 interface FieldListProps {
 	fields: DirectoryField[];
 	selectedField: DirectoryField | null;
@@ -82,6 +129,14 @@ export function FieldList({
 				onFieldsReorder(newFields);
 			}
 
+			// Валидация данных перед отправкой на сервер
+			const validationError = validateReorderData(newFields, directoryId);
+			if (validationError) {
+				console.error("Reorder validation failed:", validationError);
+				alert(`Ошибка валидации данных: ${validationError}`);
+				return;
+			}
+
 			// Сохраняем порядок на сервере
 			setIsReordering(true);
 			try {
@@ -95,6 +150,28 @@ export function FieldList({
 				await reorderFields(directoryId, reorderData);
 			} catch (error) {
 				console.error("Failed to reorder fields:", error);
+
+				// Определяем тип ошибки и показываем соответствующее сообщение
+				let errorMessage = "Не удалось сохранить порядок полей";
+
+				if (error instanceof Error) {
+					if (error.message.includes("Invalid fields data")) {
+						errorMessage =
+							"Некорректные данные полей для переупорядочивания";
+					} else if (error.message.includes("not found")) {
+						errorMessage =
+							"Некоторые поля не найдены в базе данных";
+					} else if (error.message.includes("Field with ID")) {
+						errorMessage =
+							"Ошибка валидации полей. Попробуйте обновить страницу";
+					} else if (error.message) {
+						errorMessage = `Ошибка сервера: ${error.message}`;
+					}
+				}
+
+				alert(errorMessage);
+				console.error("Reorder error details:", error);
+
 				// Восстанавливаем оригинальный порядок при ошибке
 				if (onFieldsReorder) {
 					onFieldsReorder(fields);
