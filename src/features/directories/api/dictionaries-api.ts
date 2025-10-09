@@ -2,6 +2,7 @@ import {
 	CreateFieldDto,
 	UpdateFieldDto,
 	FieldStats,
+	ReorderFieldsDto,
 } from "../model/edit-fields-types";
 import { Directory, DirectoryField } from "../model/types";
 import { useState, useEffect, useCallback } from "react";
@@ -181,6 +182,58 @@ export const deleteDirectory = async (directoryId: string) => {
 	}
 
 	return;
+};
+
+export const reorderFields = async (
+	directoryId: string,
+	fields: ReorderFieldsDto[]
+) => {
+	// Логируем данные для диагностики
+	console.log("[DictionariesAPI] Reorder request:", {
+		directoryId,
+		fieldsCount: fields.length,
+		fields: fields.map((f) => ({ id: f.id, sortOrder: f.sortOrder })),
+	});
+
+	// Валидация данных перед отправкой
+	if (!fields || !Array.isArray(fields)) {
+		throw new Error("Invalid fields data: fields must be an array");
+	}
+
+	if (fields.length === 0) {
+		throw new Error("Invalid fields data: fields array cannot be empty");
+	}
+
+	// Проверяем структуру каждого поля
+	for (const field of fields) {
+		if (!field.id || typeof field.sortOrder !== "number") {
+			throw new Error(
+				`Invalid field structure: ${JSON.stringify(field)}`
+			);
+		}
+	}
+
+	const requestBody = { fields };
+
+	console.log("[DictionariesAPI] Request body:", requestBody);
+
+	const response = await fetch(
+		`${BACKEND_URL}/api/directories/${directoryId}/fields/reorder`,
+		{
+			method: "PATCH",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(requestBody),
+			credentials: "include",
+		}
+	);
+
+	if (!response.ok) {
+		const errorData = await response.json();
+		console.error("[DictionariesAPI] Reorder failed:", errorData);
+		throw new Error(errorData.message || "Failed to reorder fields.");
+	}
+
+	return response.json();
 };
 
 export const getFieldStats = async (

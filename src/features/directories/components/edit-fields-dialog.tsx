@@ -80,6 +80,11 @@ export function EditFieldsDialog({
 						selectedField={state.selectedField}
 						onSelectField={handlers.handleSelectField}
 						onDeleteField={handlers.handleDelete}
+						directoryId={directoryId}
+						onFieldsReorder={(_newFields) => {
+							// Обновляем состояние полей в родительском компоненте
+							// Здесь можно добавить дополнительную логику если нужно
+						}}
 					/>
 					<Separator orientation="vertical" />
 					{state.mode === "create" ? (

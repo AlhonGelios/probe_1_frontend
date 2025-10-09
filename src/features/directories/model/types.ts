@@ -26,6 +26,7 @@ export interface DirectoryField {
 	isRequired: boolean;
 	isUnique: boolean;
 	defaultValue?: string | null;
+	sortOrder: number;
 }
 
 export interface DirectoryRecord {

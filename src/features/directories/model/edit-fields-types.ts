@@ -38,6 +38,11 @@ export interface EditFieldsDialogProps {
 	onOpenChange: (open: boolean) => void;
 }
 
+export interface ReorderFieldsDto {
+	id: string;
+	sortOrder: number;
+}
+
 // Экспорты для удобства использования
 export type { DirectoryField } from "./types";
 export { FIELD_TYPES, UPDATABLE_FIELDS };
