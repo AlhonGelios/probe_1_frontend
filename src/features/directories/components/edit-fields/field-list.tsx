@@ -7,7 +7,7 @@ import {
 	ReorderFieldsDto,
 } from "../../model/edit-fields-types";
 import { reorderFields } from "../../api/dictionaries-api";
-import { useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 
 // Функция валидации данных перед переупорядочиванием
 function validateReorderData(
@@ -75,6 +75,7 @@ export function FieldList({
 }: FieldListProps) {
 	const [draggedFieldId, setDraggedFieldId] = useState<string | null>(null);
 	const [isReordering, setIsReordering] = useState(false);
+	const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
 	const handleDragStart = useCallback(
 		(e: React.DragEvent<HTMLLIElement>, fieldId: string) => {
@@ -88,6 +89,7 @@ export function FieldList({
 
 	const handleDragEnd = useCallback((e: React.DragEvent<HTMLLIElement>) => {
 		setDraggedFieldId(null);
+		setDragOverIndex(null);
 		e.currentTarget.style.opacity = "1";
 	}, []);
 
@@ -96,26 +98,57 @@ export function FieldList({
 		e.dataTransfer.dropEffect = "move";
 	}, []);
 
+	const handleDragLeave = useCallback(() => {
+		setDragOverIndex(null);
+	}, []);
+
+	const handleDragEnter = useCallback(
+		(e: React.DragEvent<HTMLLIElement>, index: number) => {
+			// Получаем элемент, над которым происходит перетаскивание
+			const rect = e.currentTarget.getBoundingClientRect();
+			const midPoint = rect.top + rect.height / 2;
+
+			// Определяем, будет ли вставка выше или ниже элемента
+			const dropPosition = e.clientY < midPoint ? index : index + 1;
+			setDragOverIndex(dropPosition);
+		},
+		[]
+	);
+
 	const handleDrop = useCallback(
 		async (
 			e: React.DragEvent<HTMLLIElement>,
-			dropTargetFieldId: string
+			dropTargetFieldId?: string
 		) => {
 			e.preventDefault();
 			e.stopPropagation();
 
-			if (!draggedFieldId || draggedFieldId === dropTargetFieldId) {
+			if (!draggedFieldId) {
 				return;
+			}
+
+			// Используем dragOverIndex если он установлен, иначе используем целевой элемент
+			let targetIndex = dragOverIndex;
+			if (targetIndex === null && dropTargetFieldId) {
+				targetIndex = fields.findIndex(
+					(field) => field.id === dropTargetFieldId
+				);
 			}
 
 			const draggedIndex = fields.findIndex(
 				(field) => field.id === draggedFieldId
 			);
-			const targetIndex = fields.findIndex(
-				(field) => field.id === dropTargetFieldId
-			);
 
-			if (draggedIndex === -1 || targetIndex === -1) {
+			if (
+				draggedIndex === -1 ||
+				targetIndex === null ||
+				targetIndex === -1
+			) {
+				return;
+			}
+
+			// Проверяем что перетаскивание не на тот же элемент или соседнюю позицию
+			if (Math.abs(draggedIndex - targetIndex) <= 0) {
 				return;
 			}
 
@@ -147,7 +180,15 @@ export function FieldList({
 					})
 				);
 
-				await reorderFields(directoryId, reorderData);
+				const updatedFields = await reorderFields(
+					directoryId,
+					reorderData
+				);
+
+				// Обновляем локальное состояние с данными от сервера
+				if (onFieldsReorder && updatedFields) {
+					onFieldsReorder(updatedFields);
+				}
 			} catch (error) {
 				console.error("Failed to reorder fields:", error);
 
@@ -180,7 +221,7 @@ export function FieldList({
 				setIsReordering(false);
 			}
 		},
-		[draggedFieldId, fields, onFieldsReorder, directoryId]
+		[draggedFieldId, dragOverIndex, fields, onFieldsReorder, directoryId]
 	);
 	return (
 		<div className="w-1/3 flex-shrink-0 h-[60vh] flex flex-col">
@@ -194,79 +235,112 @@ export function FieldList({
 				)}
 			</div>
 			<ul className="space-y-2 overflow-y-auto flex-1">
-				{fields.map((field) => (
-					<li
-						key={field.id}
-						className={`${
-							field.id === selectedField?.id
-								? "bg-orange-100"
-								: ""
-						} ${
-							draggedFieldId === field.id
-								? "opacity-50 rotate-2 scale-105"
-								: ""
-						} flex items-center justify-between p-2 border rounded-md hover:bg-gray-100 mr-4 transition-all duration-200`}
-						onClick={() => onSelectField(field)}
-						draggable={!field.isSystem && !isReordering}
-						onDragStart={(e) => handleDragStart(e, field.id)}
-						onDragEnd={handleDragEnd}
-						onDragOver={handleDragOver}
-						onDrop={(e) => handleDrop(e, field.id)}
-						style={{
-							cursor:
-								field.isSystem || isReordering
-									? "pointer"
-									: "grab",
-						}}
-					>
-						<div className="flex items-center flex-1">
-							{!field.isSystem && !isReordering && (
-								<div title="Перетащить поле">
-									<GripVertical className="h-4 w-4 text-gray-400 mr-2 cursor-grab active:cursor-grabbing" />
+				{/* Визуальный индикатор вставки в начало списка */}
+				{dragOverIndex === 0 && (
+					<div className="h-1 bg-blue-500 rounded mx-4 my-1 animate-pulse"></div>
+				)}
+				{[...fields]
+					.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+					.map((field, index) => (
+						<div key={field.id}>
+							<li
+								className={`${
+									field.id === selectedField?.id
+										? "bg-orange-100"
+										: ""
+								} ${
+									draggedFieldId === field.id
+										? "opacity-50 rotate-2 scale-105"
+										: ""
+								} flex items-center justify-between p-2 border rounded-md hover:bg-gray-100 mr-4 transition-all duration-200`}
+								style={{
+									transform:
+										dragOverIndex !== null &&
+										draggedFieldId !== field.id
+											? `translateY(${
+													// Элементы выше места вставки сдвигаются вверх
+													index < dragOverIndex
+														? "-16px"
+														: // Элементы ниже места вставки сдвигаются вниз
+														index >= dragOverIndex
+														? "16px"
+														: "0px"
+											  })`
+											: "translateY(0px)",
+									cursor:
+										field.isSystem || isReordering
+											? "pointer"
+											: "grab",
+								}}
+								onClick={() => onSelectField(field)}
+								draggable={!field.isSystem && !isReordering}
+								onDragStart={(e) =>
+									handleDragStart(e, field.id)
+								}
+								onDragEnd={handleDragEnd}
+								onDragOver={handleDragOver}
+								onDragLeave={handleDragLeave}
+								onDragEnter={(e) => handleDragEnter(e, index)}
+								onDrop={(e) => handleDrop(e, field.id)}
+							>
+								<div className="flex items-center flex-1">
+									{!field.isSystem && !isReordering && (
+										<div title="Перетащить поле">
+											<GripVertical className="h-4 w-4 text-gray-400 mr-2 cursor-grab active:cursor-grabbing" />
+										</div>
+									)}
+									<div className="flex flex-col flex-1">
+										<span
+											className="truncate font-medium"
+											title={field.displayName}
+										>
+											{field.displayName}
+										</span>
+										<span className="text-xs text-muted-foreground">
+											{field.name} (
+											{[
+												field.type,
+												field.isRequired && "Required",
+												field.isUnique && "Unique",
+												field.defaultValue &&
+													"DefaultValue",
+											]
+												.filter(Boolean)
+												.join(", ")}
+											)
+										</span>
+									</div>
 								</div>
-							)}
-							<div className="flex flex-col flex-1">
-								<span
-									className="truncate font-medium"
-									title={field.displayName}
+								<Button
+									variant="ghost"
+									size="icon"
+									onClick={(e) => {
+										e.stopPropagation();
+										onDeleteField(field.id);
+									}}
+									disabled={field.isSystem || isReordering}
+									className="hover:bg-gray-300"
+									title={
+										field.isSystem
+											? "Системное поле нельзя удалить"
+											: isReordering
+											? "Нельзя удалить во время сохранения"
+											: "Удалить поле"
+									}
 								>
-									{field.displayName}
-								</span>
-								<span className="text-xs text-muted-foreground">
-									{field.name} (
-									{[
-										field.type,
-										field.isRequired && "Required",
-										field.isUnique && "Unique",
-										field.defaultValue && "DefaultValue",
-									]
-										.filter(Boolean)
-										.join(", ")}
-									)
-								</span>
-							</div>
+									<Trash2 className="h-4 w-4" />
+								</Button>
+							</li>
+							{/* Визуальный индикатор вставки между элементами */}
+							{dragOverIndex === index + 1 && (
+								<div className="h-1 bg-blue-500 rounded mx-4 my-1 animate-pulse"></div>
+							)}
 						</div>
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={(e) => {
-								e.stopPropagation();
-								onDeleteField(field.id);
-							}}
-							disabled={field.isSystem || isReordering}
-							className="hover:bg-gray-300"
-							title={
-								field.isSystem
-									? "Системное поле нельзя удалить"
-									: isReordering
-									? "Нельзя удалить во время сохранения"
-									: "Удалить поле"
-							}
-						>
-							<Trash2 className="h-4 w-4" />
-						</Button>
-					</li>
-				))}
+					))}
+				{/* Визуальный индикатор вставки для последней позиции */}
+				{dragOverIndex === fields.length && (
+					<div className="h-1 bg-blue-500 rounded mx-4 my-1 animate-pulse"></div>
+				)}
 			</ul>
 		</div>
 	);

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Button } from "@/shared/ui/button";
 import {
 	Dialog,
@@ -23,6 +24,14 @@ export function EditFieldsDialog({
 	open,
 	onOpenChange,
 }: EditFieldsDialogProps) {
+	// Локальное состояние для полей директории
+	const [fieldsState, setFieldsState] = useState(fields);
+
+	// Синхронизация локального состояния с пропсом fields при изменении извне
+	useEffect(() => {
+		setFieldsState(fields);
+	}, [fields]);
+
 	// Используем кастомные хуки для управления состоянием и обработчиками
 	const state = useEditFieldsState({ open });
 
@@ -76,14 +85,14 @@ export function EditFieldsDialog({
 				</DialogHeader>
 				<div className="flex flex-row w-full gap-4 py-4 space-y-6">
 					<FieldList
-						fields={fields}
+						fields={fieldsState}
 						selectedField={state.selectedField}
 						onSelectField={handlers.handleSelectField}
 						onDeleteField={handlers.handleDelete}
 						directoryId={directoryId}
-						onFieldsReorder={(_newFields) => {
-							// Обновляем состояние полей в родительском компоненте
-							// Здесь можно добавить дополнительную логику если нужно
+						onFieldsReorder={(newFields) => {
+							// Обновляем локальное состояние полей после перетаскивания
+							setFieldsState(newFields);
 						}}
 					/>
 					<Separator orientation="vertical" />
