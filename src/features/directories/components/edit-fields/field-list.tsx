@@ -9,6 +9,7 @@ import {
 import { reorderFields } from "../../api/dictionaries-api";
 import React, { useState, useCallback } from "react";
 import SortableList, { SortableItem } from "react-easy-sort";
+import { toast } from "sonner";
 
 // Стили для корректной работы перетаскивания
 const sortStyles = `
@@ -84,6 +85,10 @@ interface FieldListProps {
 	onDeleteField: (fieldId: string) => void;
 	directoryId: string;
 	onFieldsReorder?: (fields: DirectoryField[]) => void;
+	onFieldsError?: (fields: DirectoryField[]) => void;
+	isSaving?: boolean;
+	onSaveStart?: (operationId: string) => void;
+	onSaveEnd?: (operationId: string) => void;
 }
 
 export function FieldList({
@@ -93,17 +98,23 @@ export function FieldList({
 	onDeleteField,
 	directoryId,
 	onFieldsReorder,
+	onFieldsError,
+	onSaveStart,
+	onSaveEnd,
 }: FieldListProps) {
 	const [isReordering, setIsReordering] = useState(false);
 
 	const handleSortEnd = useCallback(
 		async (oldIndex: number, newIndex: number) => {
-			// Создаем новый порядок полей
+			// Сохраняем оригинальный порядок для возможного восстановления
+			const originalFields = [...fields];
+
+			// Создаем новый порядок полей оптимистично
 			const newFields = [...fields];
 			const [movedField] = newFields.splice(oldIndex, 1);
 			newFields.splice(newIndex, 0, movedField);
 
-			// Обновляем локальное состояние
+			// Обновляем локальное состояние сразу для лучшего UX
 			if (onFieldsReorder) {
 				onFieldsReorder(newFields);
 			}
@@ -112,12 +123,24 @@ export function FieldList({
 			const validationError = validateReorderData(newFields, directoryId);
 			if (validationError) {
 				console.error("Reorder validation failed:", validationError);
-				alert(`Ошибка валидации данных: ${validationError}`);
+				toast.error(`Ошибка валидации данных: ${validationError}`);
+				// Восстанавливаем оригинальный порядок при ошибке валидации
+				if (onFieldsReorder) {
+					onFieldsReorder(originalFields);
+				}
+				if (onFieldsError) {
+					onFieldsError(originalFields);
+				}
 				return;
 			}
 
 			// Сохраняем порядок на сервере
 			setIsReordering(true);
+			const operationId = `reorder-${Date.now()}`;
+			if (onSaveStart) {
+				onSaveStart(operationId);
+			}
+
 			try {
 				const reorderData: ReorderFieldsDto[] = newFields.map(
 					(field, index) => ({
@@ -130,6 +153,9 @@ export function FieldList({
 					directoryId,
 					reorderData
 				);
+
+				// Показываем успешное сообщение только при успешном сохранении
+				toast.success("Порядок полей успешно сохранен");
 
 				// Обновляем локальное состояние с данными от сервера
 				if (onFieldsReorder && updatedFields) {
@@ -156,18 +182,32 @@ export function FieldList({
 					}
 				}
 
-				alert(errorMessage);
+				toast.error(errorMessage);
 				console.error("Reorder error details:", error);
 
 				// Восстанавливаем оригинальный порядок при ошибке
 				if (onFieldsReorder) {
-					onFieldsReorder(fields);
+					onFieldsReorder(originalFields);
+				}
+				// Уведомляем о восстановлении состояния при ошибке
+				if (onFieldsError) {
+					onFieldsError(originalFields);
 				}
 			} finally {
 				setIsReordering(false);
+				if (onSaveEnd) {
+					onSaveEnd(operationId);
+				}
 			}
 		},
-		[fields, onFieldsReorder, directoryId]
+		[
+			fields,
+			onFieldsReorder,
+			onFieldsError,
+			onSaveEnd,
+			onSaveStart,
+			directoryId,
+		]
 	);
 	return (
 		<div className="w-1/3 flex-shrink-0 h-[60vh] flex flex-col">

@@ -9,7 +9,10 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/shared/ui/dialog";
-import { EditFieldsDialogProps } from "../model/edit-fields-types";
+import {
+	EditFieldsDialogProps,
+	DirectoryField,
+} from "../model/edit-fields-types";
 import {
 	useEditFieldsState,
 	useEditFieldsHandlers,
@@ -23,14 +26,38 @@ export function EditFieldsDialog({
 	onRefetchFields,
 	open,
 	onOpenChange,
+	onFieldsChange,
 }: EditFieldsDialogProps) {
 	// Локальное состояние для полей директории
 	const [fieldsState, setFieldsState] = useState(fields);
+
+	// Состояние для отслеживания операций сохранения
+	const [isSaving, setIsSaving] = useState<string | null>(null);
 
 	// Синхронизация локального состояния с пропсом fields при изменении извне
 	useEffect(() => {
 		setFieldsState(fields);
 	}, [fields]);
+
+	// Функция для начала операции сохранения
+	const handleSaveStart = (operationId: string) => {
+		setIsSaving(operationId);
+	};
+
+	// Функция для завершения операции сохранения
+	const handleSaveEnd = () => {
+		setIsSaving(null);
+	};
+
+	// Функция для восстановления состояния при ошибке
+	const handleRestoreState = (errorFields: DirectoryField[]) => {
+		setFieldsState(errorFields);
+
+		// Уведомляем родительский компонент о восстановлении состояния
+		if (onFieldsChange) {
+			onFieldsChange(errorFields);
+		}
+	};
 
 	// Используем кастомные хуки для управления состоянием и обработчиками
 	const state = useEditFieldsState({ open });
@@ -90,10 +117,18 @@ export function EditFieldsDialog({
 						onSelectField={handlers.handleSelectField}
 						onDeleteField={handlers.handleDelete}
 						directoryId={directoryId}
+						isSaving={isSaving !== null}
 						onFieldsReorder={(newFields) => {
 							// Обновляем локальное состояние полей после перетаскивания
 							setFieldsState(newFields);
+							// Уведомляем родительский компонент об изменениях локального состояния
+							if (onFieldsChange) {
+								onFieldsChange(newFields);
+							}
 						}}
+						onFieldsError={handleRestoreState}
+						onSaveStart={handleSaveStart}
+						onSaveEnd={handleSaveEnd}
 					/>
 					<Separator orientation="vertical" />
 					{state.mode === "create" ? (

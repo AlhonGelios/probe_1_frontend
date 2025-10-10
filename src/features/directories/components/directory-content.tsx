@@ -51,6 +51,14 @@ export default function DirectoryContent({
 		refetch: refetchFields,
 	} = useGetDirectoryFields(directoryId);
 
+	// Локальное состояние для полей для отслеживания изменений порядка
+	const [localFields, setLocalFields] = useState(fields);
+
+	// Синхронизация локального состояния с серверными данными
+	useEffect(() => {
+		setLocalFields(fields);
+	}, [fields]);
+
 	const fetchDirectory = useCallback(async () => {
 		try {
 			const fetchedDirectory = await getDirectoryById(directoryId);
@@ -163,6 +171,10 @@ export default function DirectoryContent({
 						onOpenChange={setIsFieldsDialogOpen}
 						fields={fields}
 						onRefetchFields={refetchFields}
+						onFieldsChange={(updatedFields) => {
+							// Обновляем локальное состояние полей при изменении порядка
+							setLocalFields(updatedFields);
+						}}
 					/>
 					<DeleteDirectoryDialog
 						open={isDeleteDialogOpen}
@@ -173,17 +185,17 @@ export default function DirectoryContent({
 					{isCreateDialogOpen && (
 						<CreateRecordDialog
 							directoryId={directoryId}
-							fields={fields}
+							fields={localFields}
 							onClose={() => setIsCreateDialogOpen(false)}
 						/>
 					)}
 				</div>
 			</div>
-			{/* Здесь используем fields из useGetDirectoryFields */}
+			{/* Здесь используем localFields для отображения актуального порядка полей */}
 			<Table>
 				<TableHeader>
 					<TableRow>
-						{fields.map((field) => (
+						{localFields.map((field) => (
 							<TableHead key={field.id}>
 								{field.displayName}
 							</TableHead>
@@ -193,7 +205,7 @@ export default function DirectoryContent({
 				<TableBody>
 					{directory.records.map((record, index) => (
 						<TableRow key={record.id || `row-${index}`}>
-							{fields.map((field) => (
+							{localFields.map((field) => (
 								<TableCell key={field.id}>
 									{
 										record.recordValue.find(

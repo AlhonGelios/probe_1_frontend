@@ -36,6 +36,7 @@ export interface EditFieldsDialogProps {
 	onRefetchFields: () => Promise<void>;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
+	onFieldsChange?: (fields: DirectoryField[]) => void;
 }
 
 export interface ReorderFieldsDto {
