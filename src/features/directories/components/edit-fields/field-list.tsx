@@ -380,11 +380,11 @@ export function FieldList({
 										: ""
 								} flex items-center justify-between p-3 border rounded-md hover:bg-gray-100 mr-4 transition-all duration-200 relative`}
 								style={{
-									cursor:
-										field.isSystem ||
-										reorderState.isReordering
-											? "pointer"
-											: "grab",
+									cursor: field.isSystem
+										? "pointer"
+										: reorderState.isReordering
+										? "not-allowed"
+										: "grab",
 									userSelect: "none",
 									WebkitUserSelect: "none",
 								}}
@@ -411,22 +411,33 @@ export function FieldList({
 								}}
 							>
 								<div className="flex items-center flex-1">
-									{!field.isSystem &&
-										!reorderState.isReordering && (
-											<div
-												title="Перетащить поле"
-												className="p-1 hover:bg-gray-200 rounded cursor-grab active:cursor-grabbing transition-colors select-none mr-2"
-												style={{
-													userSelect: "none",
-													WebkitUserSelect: "none",
-												}}
-												onClick={(e) =>
-													e.stopPropagation()
-												}
-											>
-												<GripVertical className="h-5 w-5 text-gray-400" />
-											</div>
-										)}
+									{!field.isSystem && (
+										<div
+											title={
+												reorderState.isReordering
+													? "Перетаскивание заблокировано во время сохранения"
+													: "Перетащить поле"
+											}
+											className={`p-1 rounded transition-colors select-none mr-2 ${
+												reorderState.isReordering
+													? "opacity-50 cursor-not-allowed"
+													: "hover:bg-gray-200 cursor-grab active:cursor-grabbing"
+											}`}
+											style={{
+												userSelect: "none",
+												WebkitUserSelect: "none",
+											}}
+											onClick={(e) => e.stopPropagation()}
+										>
+											<GripVertical
+												className={`h-5 w-5 ${
+													reorderState.isReordering
+														? "text-gray-300"
+														: "text-gray-400"
+												}`}
+											/>
+										</div>
+									)}
 									<div className="flex flex-col flex-1">
 										<span
 											className="truncate font-medium"
