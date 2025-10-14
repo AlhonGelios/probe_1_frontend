@@ -91,7 +91,7 @@ export function EditFieldsDialog({
 			open={state.isDialogOpen}
 			onOpenChange={handlers.handleDialogClose}
 		>
-			<DialogContent className="max-h-[90vh] min-w-[50vw]">
+			<DialogContent className="max-h-[90vh] min-w-[70vw]">
 				<DialogDescription />
 				<DialogHeader className="flex flex-row justify-between">
 					<DialogTitle className="py-2">
