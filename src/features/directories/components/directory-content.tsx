@@ -29,10 +29,42 @@ import { useRouter } from "next/navigation";
 import { DeleteDirectoryDialog } from "./delete-directory-dialog";
 import { DirectoriesContext } from "@/app/(core)/directories/layout";
 import { CreateRecordDialog } from "./create-record-dialog";
+import { Checkbox } from "@/shared/ui/checkbox";
 
 interface DirectoryContentProps {
 	directoryId: string;
 }
+
+// Функция для рендеринга значений полей в зависимости от типа
+const renderFieldValue = (value: string | undefined, fieldType: string) => {
+	if (!value) return "";
+
+	switch (fieldType) {
+		case "BOOLEAN":
+			return (
+				<Checkbox
+					checked={value.toLowerCase() === "true"}
+					disabled
+					className="pointer-events-none"
+				/>
+			);
+		case "DATE":
+			try {
+				const date = new Date(value);
+				return isNaN(date.getTime())
+					? value
+					: date.toLocaleDateString("ru-RU");
+			} catch {
+				return value;
+			}
+		case "NUMBER":
+			// Для чисел оставляем как есть, но можно добавить дополнительную обработку если нужно
+			return value;
+		case "STRING":
+		default:
+			return value;
+	}
+};
 
 export default function DirectoryContent({
 	directoryId,
@@ -208,11 +240,12 @@ export default function DirectoryContent({
 						<TableRow key={record.id || `row-${index}`}>
 							{localFields.map((field) => (
 								<TableCell key={field.id}>
-									{
+									{renderFieldValue(
 										record.recordValue.find(
 											(i) => i.fieldId === field.id
-										)?.value
-									}
+										)?.value,
+										field.type
+									)}
 								</TableCell>
 							))}
 						</TableRow>
