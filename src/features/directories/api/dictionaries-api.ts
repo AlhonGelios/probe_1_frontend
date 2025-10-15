@@ -4,8 +4,14 @@ import {
 	FieldStats,
 	ReorderFieldsDto,
 } from "../model/edit-fields-types";
-import { Directory, DirectoryField } from "../model/types";
+import { Directory, DirectoryField, DirectoryRecord } from "../model/types";
 import { useState, useEffect, useCallback } from "react";
+
+// Типы для создания записи справочника
+export interface CreateDirectoryRecordParams {
+	directoryId: string;
+	values: Array<{ fieldId: string; value: string }>;
+}
 
 const BACKEND_URL =
 	process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3000";
@@ -167,6 +173,37 @@ export const useGetDirectoryFields = (directoryId: string) => {
 	return { data: fields, isLoading, refetch: fetchFields };
 };
 
+export const useCreateDirectoryRecord = () => {
+	const [isLoading, setIsLoading] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+
+	const createRecord = useCallback(
+		async (
+			params: CreateDirectoryRecordParams
+		): Promise<DirectoryRecord> => {
+			setIsLoading(true);
+			setError(null);
+
+			try {
+				const result = await createDirectoryRecord(params);
+				return result;
+			} catch (err) {
+				const errorMessage =
+					err instanceof Error
+						? err.message
+						: "Failed to create directory record.";
+				setError(errorMessage);
+				throw err;
+			} finally {
+				setIsLoading(false);
+			}
+		},
+		[]
+	);
+
+	return { createRecord, isLoading, error };
+};
+
 export const deleteDirectory = async (directoryId: string) => {
 	const response = await fetch(
 		`${BACKEND_URL}/api/directories/${directoryId}`,
@@ -249,4 +286,25 @@ export const getFieldStats = async (
 
 	const result = await response.json();
 	return result.stats;
+};
+
+export const createDirectoryRecord = async (
+	params: CreateDirectoryRecordParams
+): Promise<DirectoryRecord> => {
+	const response = await fetch(`${BACKEND_URL}/api/directory-records`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(params),
+		credentials: "include",
+	});
+
+	if (!response.ok) {
+		const errorData = await response.json();
+		throw new Error(
+			errorData.message || "Failed to create directory record."
+		);
+	}
+
+	const result = await response.json();
+	return result;
 };

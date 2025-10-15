@@ -187,6 +187,7 @@ export default function DirectoryContent({
 							directoryId={directoryId}
 							fields={localFields}
 							onClose={() => setIsCreateDialogOpen(false)}
+							onRecordCreated={fetchDirectory}
 						/>
 					)}
 				</div>

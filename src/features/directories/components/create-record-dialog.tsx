@@ -14,6 +14,8 @@ import { useForm, Path } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { TriangleAlert } from "lucide-react";
 import { z } from "zod";
+import { useEffect } from "react";
+import { toast } from "sonner";
 import {
 	Form,
 	FormControl,
@@ -24,17 +26,21 @@ import {
 } from "@/shared/ui/form";
 import { DirectoryField } from "../model/types";
 import { makeFormSchema } from "../model/create-record-shemas";
+import { useCreateDirectoryRecord } from "../api/dictionaries-api";
+import { Description } from "@radix-ui/react-dialog";
 
 interface CreateRecordDialogProps<F extends readonly DirectoryField[]> {
 	directoryId: string;
 	fields: F;
 	onClose: () => void;
+	onRecordCreated?: () => void;
 }
 
 export function CreateRecordDialog<F extends readonly DirectoryField[]>({
 	directoryId,
 	fields,
 	onClose,
+	onRecordCreated,
 }: CreateRecordDialogProps<F>) {
 	const formSchema = makeFormSchema(fields);
 
@@ -44,6 +50,24 @@ export function CreateRecordDialog<F extends readonly DirectoryField[]>({
 	const form = useForm<FormValues>({
 		resolver: zodResolver(formSchema),
 	});
+
+	const {
+		createRecord,
+		isLoading: isSubmitting,
+		error: apiError,
+	} = useCreateDirectoryRecord();
+
+	// Обработка нажатия Escape для закрытия диалога
+	useEffect(() => {
+		const handleEscape = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				onClose();
+			}
+		};
+
+		document.addEventListener("keydown", handleEscape);
+		return () => document.removeEventListener("keydown", handleEscape);
+	}, [onClose]);
 
 	const shouldSkipField = (field: DirectoryField, value: FieldValues) => {
 		if (!field.isRequired) {
@@ -60,7 +84,7 @@ export function CreateRecordDialog<F extends readonly DirectoryField[]>({
 		return false;
 	};
 
-	const onSubmit = (values: FormValues) => {
+	const onSubmit = async (values: FormValues) => {
 		const validatedValues = fields
 			.map((field) => ({
 				fieldId: field.id,
@@ -77,15 +101,29 @@ export function CreateRecordDialog<F extends readonly DirectoryField[]>({
 		const formData = {
 			directoryId,
 			values: validatedValues.map((v) => ({
-				...v,
+				fieldId: v.fieldId,
 				value:
-					v.value instanceof Date ? v.value.toISOString() : v.value,
+					v.value instanceof Date
+						? v.value.toISOString()
+						: String(v.value || ""),
 			})),
 		};
 
-		console.log("Отправка данных:", formData);
-		// Здесь будет логика отправки на сервер
-		onClose();
+		try {
+			await createRecord(formData);
+			toast.success("Запись успешно создана");
+			form.reset(); // Очищаем форму после успешной отправки
+			onRecordCreated?.(); // Вызываем колбек для обновления данных
+		} catch (error: unknown) {
+			console.error("Ошибка при создании записи:", error);
+
+			// Показываем toast уведомление об ошибке
+			const errorMessage =
+				error && typeof error === "object" && "message" in error
+					? String((error as { message: unknown }).message)
+					: "Произошла неизвестная ошибка";
+			toast.error(`Ошибка при создании записи: ${errorMessage}`);
+		}
 	};
 
 	const renderFieldInput = (field: DirectoryField) => {
@@ -169,20 +207,62 @@ export function CreateRecordDialog<F extends readonly DirectoryField[]>({
 	return (
 		<Dialog open onOpenChange={onClose}>
 			<DialogContent>
+				<Description />
 				<DialogHeader>
 					<DialogTitle>Создать запись справочника</DialogTitle>
 				</DialogHeader>
 				<Form {...form}>
 					<form onSubmit={form.handleSubmit(onSubmit)}>
-						<div className="py-4">
-							{fields.map((field) => renderFieldInput(field))}
+						{isSubmitting && (
+							<div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+								<div className="flex items-center">
+									<div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+									<span className="text-blue-800 text-sm">
+										Создание записи...
+									</span>
+								</div>
+							</div>
+						)}
+						<div
+							className={`py-4 ${
+								isSubmitting
+									? "opacity-50 pointer-events-none"
+									: ""
+							}`}
+						>
+							{[...fields]
+								.sort((a, b) => a.sortOrder - b.sortOrder)
+								.map((field) => renderFieldInput(field))}
 						</div>
 
+						{apiError && (
+							<div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+								<div className="flex items-center">
+									<TriangleAlert className="h-4 w-4 text-red-600 mr-2" />
+									<span className="text-red-800 text-sm">
+										{apiError}
+									</span>
+								</div>
+							</div>
+						)}
+
 						<DialogFooter>
-							<Button variant="outline" onClick={onClose}>
+							<Button
+								type="button"
+								variant="outline"
+								onClick={onClose}
+								autoFocus={false}
+								disabled={isSubmitting}
+							>
 								Отмена
 							</Button>
-							<Button type="submit">Создать</Button>
+							<Button
+								type="submit"
+								autoFocus={false}
+								disabled={isSubmitting}
+							>
+								{isSubmitting ? "Создание..." : "Создать"}
+							</Button>
 						</DialogFooter>
 					</form>
 				</Form>
