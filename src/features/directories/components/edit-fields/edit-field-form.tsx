@@ -181,12 +181,30 @@ export function EditFieldForm({
 					<div className="flex gap-2 items-center">
 						<Select
 							value={editedField.type}
-							onValueChange={(value) =>
-								setEditedField({
+							onValueChange={(value) => {
+								const newType = value as CreateFieldDto["type"];
+
+								// Сначала сбрасываем все чекбоксы в исходное состояние
+								const resetField = {
 									...editedField,
-									type: value as CreateFieldDto["type"],
-								})
-							}
+									type: newType,
+									isRequired: false,
+									isUnique: false,
+								};
+
+								setEditedField(resetField);
+								setHasDefaultValueEdit(false);
+
+								// Затем применяем специфичную логику для нового типа поля
+								if (newType === "BOOLEAN") {
+									setEditedField({
+										...resetField,
+										isRequired: true,
+										isUnique: false,
+									});
+									setHasDefaultValueEdit(true);
+								}
+							}}
 							disabled={isTypeDisabled}
 						>
 							<SelectTrigger
@@ -241,7 +259,11 @@ export function EditFieldForm({
 								isRequired: !!checked,
 							})
 						}
-						disabled={editedField.isUnique || isUniqueDisabled}
+						disabled={
+							editedField.isUnique ||
+							isUniqueDisabled ||
+							editedField.type === "BOOLEAN"
+						}
 					/>
 					<Label htmlFor="edit-is-required">Обязательное</Label>
 				</div>
@@ -259,7 +281,9 @@ export function EditFieldForm({
 									: !!editedField.isRequired,
 							});
 						}}
-						disabled={isUniqueDisabled}
+						disabled={
+							isUniqueDisabled || editedField.type === "BOOLEAN"
+						}
 					/>
 					<Label htmlFor="edit-is-unique">Уникальное</Label>
 				</div>
@@ -278,6 +302,7 @@ export function EditFieldForm({
 								});
 							}
 						}}
+						disabled={editedField.type === "BOOLEAN"}
 					/>
 					<Label htmlFor="edit-has-default-value">
 						Значение по умолчанию

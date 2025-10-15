@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { Button } from "@/shared/ui/button";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { Input } from "@/shared/ui/input";
@@ -31,6 +32,21 @@ export function CreateFieldForm({
 	setHasDefaultValue,
 	onSubmit,
 }: CreateFieldFormProps) {
+	// Эффект для синхронизации состояния BOOLEAN полей
+	useEffect(() => {
+		const isBooleanField = newField.type === "BOOLEAN";
+
+		if (isBooleanField) {
+			// Для BOOLEAN полей принудительно устанавливаем обязательность, значение по умолчанию и отключаем уникальность
+			setNewField({
+				...newField,
+				isRequired: true,
+				isUnique: false,
+			});
+			setHasDefaultValue(true);
+		}
+	}, [newField.type, setNewField, setHasDefaultValue]);
+
 	// Используем общую функцию для рендеринга полей ввода
 
 	return (
@@ -76,12 +92,30 @@ export function CreateFieldForm({
 					<Label htmlFor="new-field-type">Тип поля</Label>
 					<Select
 						value={newField.type}
-						onValueChange={(value) =>
-							setNewField({
+						onValueChange={(value) => {
+							const newType = value as CreateFieldDto["type"];
+
+							// Сначала сбрасываем все чекбоксы в исходное состояние
+							const resetField = {
 								...newField,
-								type: value as CreateFieldDto["type"],
-							})
-						}
+								type: newType,
+								isRequired: false,
+								isUnique: false,
+							};
+
+							setNewField(resetField);
+							setHasDefaultValue(false);
+
+							// Затем применяем специфичную логику для нового типа поля
+							if (newType === "BOOLEAN") {
+								setNewField({
+									...resetField,
+									isRequired: true,
+									isUnique: false,
+								});
+								setHasDefaultValue(true);
+							}
+						}}
 					>
 						<SelectTrigger id="new-field-type">
 							<SelectValue placeholder="Выберите тип" />
@@ -105,7 +139,9 @@ export function CreateFieldForm({
 								isRequired: !!checked,
 							})
 						}
-						disabled={newField.isUnique}
+						disabled={
+							newField.isUnique || newField.type === "BOOLEAN"
+						}
 					/>
 					<Label htmlFor="is-required">Обязательное</Label>
 				</div>
@@ -123,6 +159,7 @@ export function CreateFieldForm({
 									: newField.isRequired,
 							});
 						}}
+						disabled={newField.type === "BOOLEAN"}
 					/>
 					<Label htmlFor="is-unique">Уникальное</Label>
 				</div>
@@ -140,6 +177,7 @@ export function CreateFieldForm({
 								});
 							}
 						}}
+						disabled={newField.type === "BOOLEAN"}
 					/>
 					<Label htmlFor="has-default-value">
 						Значение по умолчанию
