@@ -13,6 +13,7 @@ const typeMap: Record<FieldType, z.ZodTypeAny> = {
 	NUMBER: z.coerce.number({ error: "Значение должно быть числом" }),
 	BOOLEAN: z.coerce.boolean(),
 	DATE: z.coerce.date({ error: "Значение должно быть датой" }),
+	DATETIME: z.coerce.date({ error: "Значение должно быть датой и временем" }),
 };
 
 export const makeFormSchema = <T extends readonly DirectoryField[]>(

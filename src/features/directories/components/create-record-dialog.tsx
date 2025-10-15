@@ -1,6 +1,7 @@
 import { Button } from "@/shared/ui/button";
 import { Checkbox } from "@/shared/ui/checkbox";
 import { SimpleDatePicker } from "@/shared/ui/simple-date-picker";
+import { DateTimePicker } from "@/shared/ui/date-time-picker";
 import {
 	Dialog,
 	DialogContent,
@@ -71,7 +72,10 @@ export function CreateRecordDialog<F extends readonly DirectoryField[]>({
 
 	const shouldSkipField = (field: DirectoryField, value: FieldValues) => {
 		if (!field.isRequired) {
-			if (field.type === "DATE" && value === null) {
+			if (
+				(field.type === "DATE" || field.type === "DATETIME") &&
+				value === null
+			) {
 				return true;
 			}
 			if (typeof value === "string" && value.trim() === "") {
@@ -174,6 +178,12 @@ export function CreateRecordDialog<F extends readonly DirectoryField[]>({
 									value={formField.value as Date | null}
 									onChange={formField.onChange}
 									placeholder="Выберите дату"
+								/>
+							) : field.type === "DATETIME" ? (
+								<DateTimePicker
+									value={formField.value as Date | null}
+									onChange={formField.onChange}
+									placeholder="Выберите дату и время"
 								/>
 							) : field.type === "BOOLEAN" ? (
 								<div className="flex items-center">

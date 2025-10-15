@@ -3,6 +3,7 @@ import { Label } from "@/shared/ui/label";
 import { Switch } from "@/shared/ui/switch";
 import { ToggleableInput } from "@/shared/ui/toggleable-input";
 import { SimpleDatePicker } from "@/shared/ui/simple-date-picker";
+import { DateTimePicker } from "@/shared/ui/date-time-picker";
 import React from "react";
 
 /**
@@ -63,6 +64,17 @@ export function renderDefaultValueInput(
 						onChange(date ? date.toISOString() : "")
 					}
 					placeholder="Выберите дату по умолчанию"
+				/>
+			);
+		case "DATETIME":
+			const dateTimeValue = value ? new Date(value) : null;
+			return (
+				<DateTimePicker
+					value={dateTimeValue}
+					onChange={(date) =>
+						onChange(date ? date.toISOString() : "")
+					}
+					placeholder="Выберите дату и время по умолчанию"
 				/>
 			);
 		default:

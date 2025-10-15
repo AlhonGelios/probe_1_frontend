@@ -14,7 +14,7 @@ export interface Directory {
 	year: number;
 }
 
-export type FieldType = "STRING" | "NUMBER" | "BOOLEAN" | "DATE";
+export type FieldType = "STRING" | "NUMBER" | "BOOLEAN" | "DATE" | "DATETIME";
 
 export interface DirectoryField {
 	id: string;

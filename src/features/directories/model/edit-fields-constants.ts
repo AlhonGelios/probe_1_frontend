@@ -1,5 +1,11 @@
 // Типы полей, доступные для создания
-export const FIELD_TYPES = ["STRING", "NUMBER", "DATE", "BOOLEAN"] as const;
+export const FIELD_TYPES = [
+	"STRING",
+	"NUMBER",
+	"DATE",
+	"DATETIME",
+	"BOOLEAN",
+] as const;
 
 // Поля, которые можно обновлять при редактировании
 export const UPDATABLE_FIELDS = [

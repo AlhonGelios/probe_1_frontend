@@ -57,6 +57,21 @@ const renderFieldValue = (value: string | undefined, fieldType: string) => {
 			} catch {
 				return value;
 			}
+		case "DATETIME":
+			try {
+				const dateTime = new Date(value);
+				return isNaN(dateTime.getTime())
+					? value
+					: dateTime.toLocaleString("ru-RU", {
+							year: "numeric",
+							month: "2-digit",
+							day: "2-digit",
+							hour: "2-digit",
+							minute: "2-digit",
+					  });
+			} catch {
+				return value;
+			}
 		case "NUMBER":
 			// Для чисел оставляем как есть, но можно добавить дополнительную обработку если нужно
 			return value;
