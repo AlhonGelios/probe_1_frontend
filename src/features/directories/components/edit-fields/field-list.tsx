@@ -280,7 +280,7 @@ export function FieldList({
 				reorderState,
 			]
 		),
-		300 // 500ms дебаунсинг
+		500 // 500ms дебаунсинг
 	);
 
 	// Функция пересчета sortOrder для корректной сортировки
