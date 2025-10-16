@@ -29,6 +29,7 @@ import { DirectoryField } from "../model/types";
 import { makeFormSchema } from "../model/create-record-shemas";
 import { useCreateDirectoryRecord } from "../api/dictionaries-api";
 import { Description } from "@radix-ui/react-dialog";
+import { convertDefaultValueToType } from "../lib/edit-fields-validation";
 
 interface CreateRecordDialogProps<F extends readonly DirectoryField[]> {
 	directoryId: string;
@@ -48,8 +49,72 @@ export function CreateRecordDialog<F extends readonly DirectoryField[]>({
 	type FormValues = z.infer<typeof formSchema>;
 	type FieldValues = string | number | boolean | Date | null | undefined;
 
+	// Функция для подготовки значений по умолчанию для формы
+	const getDefaultValues = (fields: F) => {
+		const defaultValues: Record<
+			string,
+			string | number | boolean | Date | null
+		> = {};
+
+		console.log(
+			`[CreateRecordDialog] Подготовка значений по умолчанию для ${fields.length} полей`
+		);
+
+		fields.forEach((field) => {
+			console.log(`[CreateRecordDialog] Обработка поля ${field.name}:`, {
+				type: field.type,
+				defaultValue: field.defaultValue,
+				isRequired: field.isRequired,
+			});
+
+			if (field.defaultValue) {
+				try {
+					const convertedValue = convertDefaultValueToType(
+						field.type,
+						field.defaultValue
+					);
+					defaultValues[field.name] = convertedValue;
+					console.log(
+						`[CreateRecordDialog] Успешное преобразование поля ${field.name}:`,
+						{
+							originalValue: field.defaultValue,
+							convertedValue,
+							convertedType: typeof convertedValue,
+						}
+					);
+				} catch (error) {
+					console.warn(
+						`[CreateRecordDialog] Ошибка преобразования значения по умолчанию для поля ${field.name}:`,
+						{
+							fieldName: field.name,
+							fieldType: field.type,
+							defaultValue: field.defaultValue,
+							error:
+								error instanceof Error
+									? error.message
+									: String(error),
+						}
+					);
+					defaultValues[field.name] = null;
+				}
+			} else {
+				defaultValues[field.name] = null;
+				console.log(
+					`[CreateRecordDialog] Поле ${field.name} без значения по умолчанию`
+				);
+			}
+		});
+
+		console.log(
+			`[CreateRecordDialog] Итоговые значения по умолчанию:`,
+			defaultValues
+		);
+		return defaultValues;
+	};
+
 	const form = useForm<FormValues>({
 		resolver: zodResolver(formSchema),
+		defaultValues: getDefaultValues(fields),
 	});
 
 	const {
