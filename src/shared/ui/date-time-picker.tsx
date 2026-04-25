@@ -15,26 +15,33 @@ import { DayPickerProps } from "react-day-picker";
 /**
  * Конвертирует локальное время в серверное время с учетом часового пояса
  */
-const convertToServerTime = (localDate: Date): Date => {
+export const convertToServerTime = (localDate: Date): Date => {
 	try {
-		// Если дата не валидна, возвращаем её как есть
 		if (!isValid(localDate)) {
 			return localDate;
 		}
 
-		// Получаем смещение для Europe/Moscow (UTC+3)
-		const serverOffset = 3 * 60; // минуты
+		const formatter = new Intl.DateTimeFormat("ru-RU", {
+			timeZone: "Europe/Moscow",
+			year: "numeric",
+			month: "2-digit",
+			day: "2-digit",
+			hour: "2-digit",
+			minute: "2-digit",
+			second: "2-digit",
+		});
 
-		// Создаем новую дату с серверным временем
-		const serverDate = new Date(
-			localDate.getTime() + serverOffset * 60 * 1000
+		const formattedDate = formatter.format(localDate);
+
+		const parsedDate = new Date(
+			Date.parse(formattedDate.replace(/(\d+)\.(\d+)\.(\d+)/, "$2/$1/$3"))
 		);
 
 		console.log(
-			`[DateTimePicker] Converted local time ${localDate.toISOString()} to server time ${serverDate.toISOString()}`
+			`[DateTimePicker] Converted local time ${localDate.toISOString()} to server time ${parsedDate.toISOString()}`
 		);
 
-		return serverDate;
+		return parsedDate;
 	} catch (error) {
 		console.error(
 			"[DateTimePicker] Error converting to server time:",
@@ -47,25 +54,33 @@ const convertToServerTime = (localDate: Date): Date => {
 /**
  * Конвертирует серверное время в локальное для отображения
  */
-const convertFromServerTime = (serverDate: Date): Date => {
+export const convertFromServerTime = (serverDate: Date): Date => {
 	try {
 		if (!isValid(serverDate)) {
 			return serverDate;
 		}
 
-		// Получаем смещение для Europe/Moscow (UTC+3)
-		const serverOffset = 3 * 60; // минуты
+		const formatter = new Intl.DateTimeFormat("ru-RU", {
+			timeZone: "Europe/Moscow",
+			year: "numeric",
+			month: "2-digit",
+			day: "2-digit",
+			hour: "2-digit",
+			minute: "2-digit",
+			second: "2-digit",
+		});
 
-		// Конвертируем серверное время в локальное
-		const localDate = new Date(
-			serverDate.getTime() - serverOffset * 60 * 1000
+		const formattedDate = formatter.format(serverDate);
+
+		const parsedDate = new Date(
+			Date.parse(formattedDate.replace(/(\d+)\.(\d+)\.(\d+)/, "$2/$1/$3"))
 		);
 
 		console.log(
-			`[DateTimePicker] Converted server time ${serverDate.toISOString()} to local time ${localDate.toISOString()}`
+			`[DateTimePicker] Converted server time ${serverDate.toISOString()} to local time ${parsedDate.toISOString()}`
 		);
 
-		return localDate;
+		return parsedDate;
 	} catch (error) {
 		console.error(
 			"[DateTimePicker] Error converting from server time:",

@@ -63,6 +63,7 @@ const renderFieldValue = (value: string | undefined, fieldType: string) => {
 				return isNaN(dateTime.getTime())
 					? value
 					: dateTime.toLocaleString("ru-RU", {
+							timeZone: "Europe/Moscow",
 							year: "numeric",
 							month: "2-digit",
 							day: "2-digit",
