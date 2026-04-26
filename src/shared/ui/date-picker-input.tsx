@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useRef, useState } from "react";
-import { format, parse, isValid } from "date-fns";
 import { ru } from "date-fns/locale";
 import { CalendarIcon, XCircle } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
@@ -18,12 +17,16 @@ import { cn } from "@/shared/lib/utils";
 import { IMaskInput } from "react-imask";
 import { ControllerRenderProps, FieldPath, FieldValues } from "react-hook-form";
 import { DayPickerProps } from "react-day-picker";
+import {
+	parseDateFromInput,
+	formatDateForDisplay,
+} from "@/shared/lib/timezone";
 
 const isDateInstance = (value: unknown): value is Date => value instanceof Date;
 
 interface DatePickerInputProps<
 	TFieldValues extends FieldValues,
-	TName extends FieldPath<TFieldValues>
+	TName extends FieldPath<TFieldValues>,
 > {
 	field: ControllerRenderProps<TFieldValues, TName>;
 	label: string;
@@ -36,7 +39,7 @@ interface DatePickerInputProps<
 
 export function DatePickerInput<
 	TFieldValues extends FieldValues,
-	TName extends FieldPath<TFieldValues>
+	TName extends FieldPath<TFieldValues>,
 >({
 	field,
 	label,
@@ -58,11 +61,9 @@ export function DatePickerInput<
 	};
 
 	const handleAccept = (value: string) => {
-		const parsedDate = parse(value, "dd.MM.yyyy", new Date(), {
-			locale: ru,
-		});
+		const parsedDate = parseDateFromInput(value);
 
-		if (isValid(parsedDate) && value.length === "dd.MM.yyyy".length) {
+		if (parsedDate) {
 			field.onChange(parsedDate);
 		} else {
 			field.onChange(value);
@@ -70,7 +71,7 @@ export function DatePickerInput<
 	};
 
 	const inputValue = isDateInstance(field.value)
-		? format(field.value, "dd.MM.yyyy", { locale: ru })
+		? formatDateForDisplay(field.value)
 		: field.value || "";
 
 	const startMonth = new Date(fromYear, 0, 1);
@@ -102,7 +103,7 @@ export function DatePickerInput<
 							inputRef.current = el;
 						}}
 						className={cn(
-							"flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pr-16"
+							"flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pr-16",
 						)}
 					/>
 				</FormControl>

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useState } from "react";
-import { format, parse, isValid, setHours, setMinutes } from "date-fns";
+import { setHours, setMinutes } from "date-fns";
 import { ru } from "date-fns/locale";
 import { CalendarIcon, Clock, XCircle } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
@@ -11,84 +11,12 @@ import { Label } from "@/shared/ui/label";
 import { cn } from "@/shared/lib/utils";
 import { IMaskInput } from "react-imask";
 import { DayPickerProps } from "react-day-picker";
-
-/**
- * Конвертирует локальное время в серверное время с учетом часового пояса
- */
-export const convertToServerTime = (localDate: Date): Date => {
-	try {
-		if (!isValid(localDate)) {
-			return localDate;
-		}
-
-		const formatter = new Intl.DateTimeFormat("ru-RU", {
-			timeZone: "Europe/Moscow",
-			year: "numeric",
-			month: "2-digit",
-			day: "2-digit",
-			hour: "2-digit",
-			minute: "2-digit",
-			second: "2-digit",
-		});
-
-		const formattedDate = formatter.format(localDate);
-
-		const parsedDate = new Date(
-			Date.parse(formattedDate.replace(/(\d+)\.(\d+)\.(\d+)/, "$2/$1/$3"))
-		);
-
-		console.log(
-			`[DateTimePicker] Converted local time ${localDate.toISOString()} to server time ${parsedDate.toISOString()}`
-		);
-
-		return parsedDate;
-	} catch (error) {
-		console.error(
-			"[DateTimePicker] Error converting to server time:",
-			error
-		);
-		return localDate;
-	}
-};
-
-/**
- * Конвертирует серверное время в локальное для отображения
- */
-export const convertFromServerTime = (serverDate: Date): Date => {
-	try {
-		if (!isValid(serverDate)) {
-			return serverDate;
-		}
-
-		const formatter = new Intl.DateTimeFormat("ru-RU", {
-			timeZone: "Europe/Moscow",
-			year: "numeric",
-			month: "2-digit",
-			day: "2-digit",
-			hour: "2-digit",
-			minute: "2-digit",
-			second: "2-digit",
-		});
-
-		const formattedDate = formatter.format(serverDate);
-
-		const parsedDate = new Date(
-			Date.parse(formattedDate.replace(/(\d+)\.(\d+)\.(\d+)/, "$2/$1/$3"))
-		);
-
-		console.log(
-			`[DateTimePicker] Converted server time ${serverDate.toISOString()} to local time ${parsedDate.toISOString()}`
-		);
-
-		return parsedDate;
-	} catch (error) {
-		console.error(
-			"[DateTimePicker] Error converting from server time:",
-			error
-		);
-		return serverDate;
-	}
-};
+import {
+	convertToTimezone,
+	convertFromTimezone,
+	formatDateTimeForDisplay,
+	parseDateTimeFromInput,
+} from "@/shared/lib/timezone";
 
 interface DateTimePickerProps {
 	label?: string;
@@ -127,7 +55,7 @@ export function DateTimePicker({
 	});
 
 	// Отображаемое значение - конвертируем серверное время в локальное для отображения
-	const displayValue = value ? convertFromServerTime(value) : null;
+	const displayValue = value ? convertFromTimezone(value) : null;
 
 	const handleClear = () => {
 		onChange(null);
@@ -141,17 +69,17 @@ export function DateTimePicker({
 		if (!date) return;
 
 		console.log(
-			`[DateTimePicker] Date selected from calendar: ${date.toISOString()}`
+			`[DateTimePicker] Date selected from calendar: ${date.toISOString()}`,
 		);
 
 		// Создаем новую дату с выбранной датой и текущим выбранным временем
 		const dateTimeWithSelectedTime = setMinutes(
 			setHours(date, selectedTime.hours),
-			selectedTime.minutes
+			selectedTime.minutes,
 		);
 
 		// Конвертируем в серверное время перед сохранением
-		const serverDateTime = convertToServerTime(dateTimeWithSelectedTime);
+		const serverDateTime = convertToTimezone(dateTimeWithSelectedTime);
 		onChange(serverDateTime);
 		setIsCalendarOpen(false);
 	};
@@ -163,11 +91,11 @@ export function DateTimePicker({
 			// Создаем новую дату с текущей датой и новым временем
 			const newDateTime = setMinutes(
 				setHours(displayValue, hours),
-				minutes
+				minutes,
 			);
 
 			// Конвертируем в серверное время перед сохранением
-			const serverDateTime = convertToServerTime(newDateTime);
+			const serverDateTime = convertToTimezone(newDateTime);
 			onChange(serverDateTime);
 		}
 
@@ -176,11 +104,11 @@ export function DateTimePicker({
 
 	const formatDateTimeForInput = (date: Date): string => {
 		try {
-			return format(date, "dd.MM.yyyy HH:mm", { locale: ru });
+			return formatDateTimeForDisplay(date);
 		} catch (error) {
 			console.error(
 				"[DateTimePicker] Error formatting date for input:",
-				error
+				error,
 			);
 			return "";
 		}
@@ -188,28 +116,21 @@ export function DateTimePicker({
 
 	const handleAccept = (textValue: string) => {
 		// Парсим дату и время из маски dd.MM.yyyy HH:mm
-		const parsedDate = parse(textValue, "dd.MM.yyyy HH:mm", new Date(), {
-			locale: ru,
-		});
+		const parsedDate = parseDateTimeFromInput(textValue);
 
-		if (
-			isValid(parsedDate) &&
-			textValue.length === "dd.MM.yyyy HH:mm".length
-		) {
+		if (parsedDate) {
 			console.log(
-				`[DateTimePicker] Valid datetime selected: ${parsedDate.toISOString()}`
+				`[DateTimePicker] Valid datetime selected: ${parsedDate.toISOString()}`,
 			);
 
-			// Конвертируем в серверное время перед сохранением
-			const serverDateTime = convertToServerTime(parsedDate);
-			onChange(serverDateTime);
+			onChange(parsedDate);
 			setSelectedTime({
 				hours: parsedDate.getHours(),
 				minutes: parsedDate.getMinutes(),
 			});
 		} else if (textValue) {
 			console.error(
-				`[DateTimePicker] Invalid datetime format: ${textValue}`
+				`[DateTimePicker] Invalid datetime format: ${textValue}`,
 			);
 		}
 	};
@@ -225,7 +146,7 @@ export function DateTimePicker({
 	// Генерируем доступные минуты на основе шага
 	const availableMinutes = Array.from(
 		{ length: 60 / timeStep },
-		(_, i) => i * timeStep
+		(_, i) => i * timeStep,
 	);
 
 	return (
@@ -246,7 +167,7 @@ export function DateTimePicker({
 					placeholder={placeholder}
 					inputRef={inputRef}
 					className={cn(
-						"flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pr-24"
+						"flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pr-24",
 					)}
 				/>
 
@@ -298,7 +219,7 @@ export function DateTimePicker({
 												onClick={() =>
 													handleTimeSelect(
 														hour,
-														selectedTime.minutes
+														selectedTime.minutes,
 													)
 												}
 											>
@@ -329,7 +250,7 @@ export function DateTimePicker({
 												onClick={() =>
 													handleTimeSelect(
 														selectedTime.hours,
-														minute
+														minute,
 													)
 												}
 											>
