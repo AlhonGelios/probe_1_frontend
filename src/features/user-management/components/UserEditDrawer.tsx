@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import dayjs from "dayjs";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -34,7 +35,7 @@ import { changeUser } from "../api/user-api";
 import { User } from "@/features/auth/model/types";
 import { UserEditFormValues, userEditSchema } from "../model/schemas";
 import { useRoleStore } from "../stores/role-store";
-import { DatePickerInput } from "@/shared/ui/date-picker-input";
+import { AntdDatePicker } from "@/shared/ui/antd-date-picker";
 
 interface UserEditDrawerProps {
 	user: User | null;
@@ -104,7 +105,7 @@ export function UserEditDrawer({
 
 			const response = await changeUser(payload);
 			toast.success(
-				response.message || "Данные пользователя успешно обновлены."
+				response.message || "Данные пользователя успешно обновлены.",
 			);
 			onUserUpdated();
 			onClose();
@@ -215,7 +216,7 @@ export function UserEditDrawer({
 															>
 																{displayName}
 															</SelectItem>
-														)
+														),
 													)
 												)}
 											</SelectContent>
@@ -228,18 +229,18 @@ export function UserEditDrawer({
 								control={form.control}
 								name="roleExpiration"
 								render={({ field }) => (
-									<DatePickerInput<
-										UserEditFormValues,
-										"roleExpiration"
-									>
-										field={field}
+									<AntdDatePicker
+										value={field.value as Date | null}
+										onChange={field.onChange}
 										label="Дата истечения роли (опционально)"
 										placeholder="Выберите дату"
-										fromYear={new Date().getFullYear()}
-										toYear={new Date().getFullYear() + 5}
-										disabled={{
-											before: new Date(),
-										}}
+										disabledDate={(current) =>
+											current &&
+											current.isBefore(
+												dayjs().startOf("day"),
+											)
+										}
+										showTime={false}
 									/>
 								)}
 							/>

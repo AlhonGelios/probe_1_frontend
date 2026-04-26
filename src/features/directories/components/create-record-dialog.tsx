@@ -1,7 +1,6 @@
 import { Button } from "@/shared/ui/button";
 import { Checkbox } from "@/shared/ui/checkbox";
-import { SimpleDatePicker } from "@/shared/ui/simple-date-picker";
-import { DateTimePicker } from "@/shared/ui/date-time-picker";
+import { AntdDatePicker } from "@/shared/ui/antd-date-picker";
 import {
 	Dialog,
 	DialogContent,
@@ -57,7 +56,7 @@ export function CreateRecordDialog<F extends readonly DirectoryField[]>({
 		> = {};
 
 		console.log(
-			`[CreateRecordDialog] Подготовка значений по умолчанию для ${fields.length} полей`
+			`[CreateRecordDialog] Подготовка значений по умолчанию для ${fields.length} полей`,
 		);
 
 		fields.forEach((field) => {
@@ -71,7 +70,7 @@ export function CreateRecordDialog<F extends readonly DirectoryField[]>({
 				try {
 					const convertedValue = convertDefaultValueToType(
 						field.type,
-						field.defaultValue
+						field.defaultValue,
 					);
 					defaultValues[field.name] = convertedValue;
 					console.log(
@@ -80,7 +79,7 @@ export function CreateRecordDialog<F extends readonly DirectoryField[]>({
 							originalValue: field.defaultValue,
 							convertedValue,
 							convertedType: typeof convertedValue,
-						}
+						},
 					);
 				} catch (error) {
 					console.warn(
@@ -93,21 +92,21 @@ export function CreateRecordDialog<F extends readonly DirectoryField[]>({
 								error instanceof Error
 									? error.message
 									: String(error),
-						}
+						},
 					);
 					defaultValues[field.name] = null;
 				}
 			} else {
 				defaultValues[field.name] = null;
 				console.log(
-					`[CreateRecordDialog] Поле ${field.name} без значения по умолчанию`
+					`[CreateRecordDialog] Поле ${field.name} без значения по умолчанию`,
 				);
 			}
 		});
 
 		console.log(
 			`[CreateRecordDialog] Итоговые значения по умолчанию:`,
-			defaultValues
+			defaultValues,
 		);
 		return defaultValues;
 	};
@@ -163,8 +162,8 @@ export function CreateRecordDialog<F extends readonly DirectoryField[]>({
 				(item) =>
 					!shouldSkipField(
 						fields.find((f) => f.id === item.fieldId)!,
-						item.value as FieldValues
-					)
+						item.value as FieldValues,
+					),
 			);
 
 		const formData = {
@@ -234,21 +233,23 @@ export function CreateRecordDialog<F extends readonly DirectoryField[]>({
 									value={Number(formField.value || 0)}
 									onChange={(e) =>
 										formField.onChange(
-											Number(e.target.value)
+											Number(e.target.value),
 										)
 									}
 								/>
 							) : field.type === "DATE" ? (
-								<SimpleDatePicker
+								<AntdDatePicker
 									value={formField.value as Date | null}
 									onChange={formField.onChange}
 									placeholder="Выберите дату"
+									showTime={false}
 								/>
 							) : field.type === "DATETIME" ? (
-								<DateTimePicker
+								<AntdDatePicker
 									value={formField.value as Date | null}
 									onChange={formField.onChange}
 									placeholder="Выберите дату и время"
+									showTime={true}
 								/>
 							) : field.type === "BOOLEAN" ? (
 								<div className="flex items-center">

@@ -2,8 +2,7 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Switch } from "@/shared/ui/switch";
 import { ToggleableInput } from "@/shared/ui/toggleable-input";
-import { SimpleDatePicker } from "@/shared/ui/simple-date-picker";
-import { DateTimePicker } from "@/shared/ui/date-time-picker";
+import { AntdDatePicker } from "@/shared/ui/antd-date-picker";
 import React from "react";
 
 /**
@@ -18,7 +17,7 @@ export function renderDefaultValueInput(
 	fieldType: string,
 	value: string,
 	onChange: (value: string) => void,
-	disabled: boolean = false
+	disabled: boolean = false,
 ): React.ReactNode {
 	switch (fieldType) {
 		case "STRING":
@@ -58,23 +57,27 @@ export function renderDefaultValueInput(
 		case "DATE":
 			const dateValue = value ? new Date(value) : null;
 			return (
-				<SimpleDatePicker
+				<AntdDatePicker
 					value={dateValue}
 					onChange={(date) =>
 						onChange(date ? date.toISOString() : "")
 					}
 					placeholder="Выберите дату по умолчанию"
+					showTime={false}
+					disabled={disabled}
 				/>
 			);
 		case "DATETIME":
 			const dateTimeValue = value ? new Date(value) : null;
 			return (
-				<DateTimePicker
+				<AntdDatePicker
 					value={dateTimeValue}
 					onChange={(date) =>
 						onChange(date ? date.toISOString() : "")
 					}
 					placeholder="Выберите дату и время по умолчанию"
+					showTime={true}
+					disabled={disabled}
 				/>
 			);
 		default:
