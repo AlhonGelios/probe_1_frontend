@@ -9,27 +9,29 @@ import {
 import { Button } from "@/shared/ui/button";
 import { Loader2 } from "lucide-react";
 
-interface DeleteDirectoryDialogProps {
+interface DeleteDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	onConfirm: () => void;
 	isDeleting: boolean;
+	entityTitle?: string;
+	entityDescription?: string;
 }
 
-export function DeleteDirectoryDialog({
+export function DeleteDialog({
 	open,
 	onOpenChange,
 	onConfirm,
 	isDeleting,
-}: DeleteDirectoryDialogProps) {
+	entityTitle = "Удалить",
+	entityDescription = "Этот объект будет удален",
+}: DeleteDialogProps) {
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
-					<DialogTitle>Удалить справочник</DialogTitle>
-					<DialogDescription>
-						Справочник и всё его содержимое будет полностью удалено
-					</DialogDescription>
+					<DialogTitle>{entityTitle}</DialogTitle>
+					<DialogDescription>{entityDescription}</DialogDescription>
 				</DialogHeader>
 				<DialogFooter className="sm:justify-end">
 					<Button

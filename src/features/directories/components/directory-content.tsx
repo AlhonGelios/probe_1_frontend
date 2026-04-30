@@ -15,21 +15,21 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow,
-} from "@/shared/ui/table";
-import { Button } from "@/shared/ui/button";
+} from "@ui/table";
+import { Button } from "@ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuTrigger,
 	DropdownMenuContent,
 	DropdownMenuItem,
-} from "@/shared/ui/dropdown-menu";
+} from "@ui/dropdown-menu";
 import { toast } from "sonner";
 import { EditFieldsDialog } from "./edit-fields-dialog";
 import { useRouter } from "next/navigation";
-import { DeleteDirectoryDialog } from "./delete-directory-dialog";
+import { DeleteDialog } from "@ui/delete-dialog";
 import { DirectoriesContext } from "@/app/(core)/directories/layout";
 import { CreateRecordDialog } from "./create-record-dialog";
-import { Checkbox } from "@/shared/ui/checkbox";
+import { Checkbox } from "@ui/checkbox";
 
 interface DirectoryContentProps {
 	directoryId: string;
@@ -69,7 +69,7 @@ const renderFieldValue = (value: string | undefined, fieldType: string) => {
 							day: "2-digit",
 							hour: "2-digit",
 							minute: "2-digit",
-					  });
+						});
 			} catch {
 				return value;
 			}
@@ -118,7 +118,7 @@ export default function DirectoryContent({
 					? error.message
 					: "Произошла неизвестная ошибка";
 			toast.error(
-				`Не удалось загрузить содержимое справочника: ${errorMessage}`
+				`Не удалось загрузить содержимое справочника: ${errorMessage}`,
 			);
 		} finally {
 			setIsLoading(false);
@@ -224,11 +224,13 @@ export default function DirectoryContent({
 							setLocalFields(updatedFields);
 						}}
 					/>
-					<DeleteDirectoryDialog
+					<DeleteDialog
 						open={isDeleteDialogOpen}
 						onOpenChange={setIsDeleteDialogOpen}
 						onConfirm={handleDeleteDirectory}
 						isDeleting={isDeleting}
+						entityTitle="Удалить справочник"
+						entityDescription="Справочник и всё его содержимое будет полностью удалено"
 					/>
 					{isCreateDialogOpen && (
 						<CreateRecordDialog
@@ -258,9 +260,9 @@ export default function DirectoryContent({
 								<TableCell key={field.id}>
 									{renderFieldValue(
 										record.recordValue.find(
-											(i) => i.fieldId === field.id
+											(i) => i.fieldId === field.id,
 										)?.value,
-										field.type
+										field.type,
 									)}
 								</TableCell>
 							))}

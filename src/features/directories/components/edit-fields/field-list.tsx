@@ -10,6 +10,7 @@ import { reorderFields } from "../../api/dictionaries-api";
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import SortableList, { SortableItem } from "react-easy-sort";
 import { toast } from "sonner";
+import { DeleteDialog } from "@ui/delete-dialog";
 
 // Стили для корректной работы перетаскивания
 const sortStyles = `
@@ -34,7 +35,7 @@ const sortStyles = `
 // Улучшенная функция валидации данных перед переупорядочиванием
 function validateReorderData(
 	fields: DirectoryField[],
-	directoryId: string
+	directoryId: string,
 ): string | null {
 	// Проверяем что массив полей не пустой
 	if (!fields || fields.length === 0) {
@@ -48,7 +49,7 @@ function validateReorderData(
 
 	// Проверяем что все поля имеют корректные ID
 	const invalidFields = fields.filter(
-		(field) => !field.id || typeof field.id !== "string"
+		(field) => !field.id || typeof field.id !== "string",
 	);
 	if (invalidFields.length > 0) {
 		return `Найдены поля с некорректными ID: ${invalidFields
@@ -77,7 +78,7 @@ function validateReorderData(
 
 	// Проверяем корректность sortOrder значений
 	const invalidSortOrders = fields.filter(
-		(field) => typeof field.sortOrder !== "number" || field.sortOrder < 0
+		(field) => typeof field.sortOrder !== "number" || field.sortOrder < 0,
 	);
 	if (invalidSortOrders.length > 0) {
 		return `Найдены поля с некорректными значениями sortOrder: ${invalidSortOrders
@@ -91,7 +92,7 @@ function validateReorderData(
 // Хук для дебаунсинга операций сортировки
 function useDebounce<T extends (...args: never[]) => void>(
 	callback: T,
-	delay: number
+	delay: number,
 ): T {
 	const callbackRef = useRef(callback);
 	const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -117,7 +118,7 @@ function useDebounce<T extends (...args: never[]) => void>(
 				callbackRef.current(...args);
 			}, delay);
 		}) as T,
-		[delay]
+		[delay],
 	);
 }
 
@@ -131,7 +132,7 @@ function useReorderState() {
 		// Проверяем, не выполняется ли уже операция
 		if (isReordering && operationRef.current) {
 			console.warn(
-				"Reorder already in progress, ignoring duplicate request"
+				"Reorder already in progress, ignoring duplicate request",
 			);
 			return null;
 		}
@@ -194,6 +195,10 @@ export function FieldList({
 	onSaveEnd,
 }: FieldListProps) {
 	const reorderState = useReorderState();
+	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+	const [fieldToDelete, setFieldToDelete] = useState<DirectoryField | null>(
+		null,
+	);
 
 	// Дебаунсинг для предотвращения множественных быстрых операций сортировки
 	const debouncedReorder = useDebounce(
@@ -209,18 +214,18 @@ export function FieldList({
 						(field) => ({
 							id: field.id,
 							sortOrder: field.sortOrder, // Используем сохраненные sortOrder значения
-						})
+						}),
 					);
 
 					const updatedFields = await reorderFields(
 						directoryId,
-						reorderData
+						reorderData,
 					);
 
 					// Проверяем актуальность операции
 					if (!reorderState.isCurrentOperation(operationId)) {
 						console.warn(
-							"Operation was superseded by newer reorder, ignoring response"
+							"Operation was superseded by newer reorder, ignoring response",
 						);
 						return;
 					}
@@ -278,9 +283,9 @@ export function FieldList({
 				onFieldsError,
 				onSaveEnd,
 				reorderState,
-			]
+			],
 		),
-		500 // 500ms дебаунсинг
+		500, // 500ms дебаунсинг
 	);
 
 	// Функция пересчета sortOrder для корректной сортировки
@@ -296,7 +301,7 @@ export function FieldList({
 			// Предотвращаем повторные операции во время активной сортировки
 			if (reorderState.isReordering) {
 				console.warn(
-					"Reorder already in progress, ignoring duplicate request"
+					"Reorder already in progress, ignoring duplicate request",
 				);
 				return;
 			}
@@ -317,7 +322,7 @@ export function FieldList({
 			// Валидация данных перед отправкой на сервер
 			const validationError = validateReorderData(
 				fieldsWithNewSortOrder,
-				directoryId
+				directoryId,
 			);
 			if (validationError) {
 				console.error("Reorder validation failed:", validationError);
@@ -351,7 +356,7 @@ export function FieldList({
 			reorderState,
 			debouncedReorder,
 			recalculateSortOrders,
-		]
+		],
 	);
 	return (
 		<div className="w-1/3 flex-shrink-0 h-[60vh] flex flex-col">
@@ -383,8 +388,8 @@ export function FieldList({
 									cursor: field.isSystem
 										? "pointer"
 										: reorderState.isReordering
-										? "not-allowed"
-										: "grab",
+											? "not-allowed"
+											: "grab",
 									userSelect: "none",
 									WebkitUserSelect: "none",
 								}}
@@ -392,7 +397,7 @@ export function FieldList({
 									// Предотвращаем клик по кнопке удаления
 									if (
 										(e.target as HTMLElement).closest(
-											"button"
+											"button",
 										)
 									) {
 										return;
@@ -465,7 +470,13 @@ export function FieldList({
 									size="icon"
 									onClick={(e) => {
 										e.stopPropagation();
-										onDeleteField(field.id);
+										if (
+											!field.isSystem &&
+											!reorderState.isReordering
+										) {
+											setFieldToDelete(field);
+											setDeleteDialogOpen(true);
+										}
 									}}
 									disabled={
 										field.isSystem ||
@@ -476,8 +487,8 @@ export function FieldList({
 										field.isSystem
 											? "Системное поле нельзя удалить"
 											: reorderState.isReordering
-											? "Нельзя удалить во время сохранения"
-											: "Удалить поле"
+												? "Нельзя удалить во время сохранения"
+												: "Удалить поле"
 									}
 								>
 									<Trash2 className="h-4 w-4" />
@@ -487,6 +498,25 @@ export function FieldList({
 					</SortableItem>
 				))}
 			</SortableList>
+			<DeleteDialog
+				open={deleteDialogOpen}
+				onOpenChange={(open) => {
+					setDeleteDialogOpen(open);
+					if (!open) {
+						setFieldToDelete(null);
+					}
+				}}
+				onConfirm={() => {
+					if (fieldToDelete) {
+						onDeleteField(fieldToDelete.id);
+						setDeleteDialogOpen(false);
+						setFieldToDelete(null);
+					}
+				}}
+				isDeleting={false}
+				entityTitle="Удалить поле"
+				entityDescription="Поле будет удалено из справочника. Все связанные данные будут утеряны."
+			/>
 		</div>
 	);
 }
